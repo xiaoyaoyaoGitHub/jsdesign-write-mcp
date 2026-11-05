@@ -3,6 +3,7 @@
   "version": "2.2.0",
   "private": true,
   "description": "即时设计 MCP 桥接：插件负责画布读写，本服务负责把 MCP 调用转发给插件",
+  "license": "MIT",
   "bin": {
     "gy_jsdesign_mcp_bridge": "mcp-server/dist/index.js",
     "jsdesign-write-mcp": "mcp-server/dist/index.js"
@@ -11,9 +12,9 @@
     "node": ">=18"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.12.1",
-    "ws": "^8.18.0",
-    "zod": "^3.24.0"
+    "@modelcontextprotocol/sdk": "1.29.0",
+    "ws": "8.21.1",
+    "zod": "3.25.76"
   },
   "files": [
     "mcp-server/dist/",

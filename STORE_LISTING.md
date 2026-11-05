@@ -119,12 +119,15 @@ npm i -g github:xiaoyaoyaoGitHub/jsdesign-write-mcp
 
 ### 第 3 步：确认桥接服务在监听
 
-默认端口 `3847`，与 Cursor 的 MCP 进程相互独立，关闭 Cursor 不会立刻断开。手动预热：
+默认端口 `3847`，与 Cursor 的 MCP 进程相互独立，关闭 Cursor 不会立刻断开。手动预热（**前台常驻进程，需保持该终端窗口不关**）：
 
 ```bash
 gy_jsdesign_mcp_bridge daemon
-# 或未全局安装时：npx github:xiaoyaoyaoGitHub/jsdesign-write-mcp daemon
+# 未全局安装时：npx github:xiaoyaoyaoGitHub/jsdesign-write-mcp daemon
 ```
+
+> 一般无需手动执行：AI 客户端启用 MCP 时会自动拉起 daemon。
+> Windows 若在 `mcp.json` 里写 `"command": "gy_jsdesign_mcp_bridge"` 提示找不到命令，改写成 `gy_jsdesign_mcp_bridge.cmd`，或用 `"command": "npx"` 形式。
 
 - 改端口：设置环境变量 `JSDESIGN_MCP_PORT`（例如 `3848`），并把插件面板里的地址同步改掉
 - 空闲退出：当 AI 客户端与插件**都已断开**并持续 15 分钟后，服务自动退出（`JSDESIGN_MCP_IDLE_MS` 可覆盖，设 `0` 禁用）

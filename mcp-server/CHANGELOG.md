@@ -25,6 +25,10 @@
 
 - `export_assets`、`get_design_tokens`、`get_node_css`、`create_frame`、`create_rectangle`、`create_text`、`create_from_json`、`delete_node` 的 `clientId` 改为**必填**（空串会被拒绝），工具描述要求先调 `get_connection_status` 并向用户确认目标文档，避免写错文档
 - 版本号统一为 `2.2.0`：根 `package.json`、`mcp-server/package.json`、`manifest.version`、MCP 自报版本、插件面板展示
+- **分发形态**：根 `package.json` 增加 `bin`（`gy_jsdesign_mcp_bridge`，另带 `jsdesign-write-mcp` 别名供 `npx github:` 解析）与运行时依赖，`mcp-server/dist/` 改为入库；因此 `npx github:xiaoyaoyaoGitHub/jsdesign-write-mcp` 免编译即可运行
+- 移除仓库内的 `mcp-server/.npmrc`（其 `_authToken=${NPM_TOKEN}` 会让没有该变量的机器 `npm install` 直接失败）；`publish.mjs` 改为把 token 作为命令行配置项传给 npm
+- 运行时依赖钉死为 `@modelcontextprotocol/sdk@1.29.0`、`ws@8.21.1`、`zod@3.25.76`（与本仓库 lockfile 一致），避免 `^` 漂移
+- 仓库元数据指向 fork 仓库，补充 `LICENSE`（MIT，保留原作者版权）
 
 ## [2.0.0] - 2026-08-07
 

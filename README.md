@@ -8,6 +8,7 @@
 - 版本日志：[mcp-server/CHANGELOG.md](mcp-server/CHANGELOG.md)
 
 **环境要求**：Node.js 18+ · [即时设计桌面端](https://js.design/download) · [Cursor](https://cursor.com)
+· git（仅「`npx github:` 免安装」方式需要，且需能访问 GitHub；已全局安装则不需要）
 
 ---
 
@@ -26,7 +27,7 @@
 架构：
 
 ```text
-即时设计插件 ──WebSocket :3847──► jsdesign-mcp daemon
+即时设计插件 ──WebSocket :3847──► gy_jsdesign_mcp_bridge daemon
 Cursor MCP stdio ──agent 接入──► 同上 daemon（Cursor 启停不立刻关端口）
 ```
 
@@ -145,7 +146,7 @@ MCP 绿灯后，再在即时设计里装插件并连上 WebSocket。
 
 若显示「未连接」：
 
-1. 确认本机 `3847` 上已有 daemon（可先跑 `jsdesign-mcp daemon`），且 Cursor 里 jsdesign MCP 为绿灯
+1. 确认本机 `3847` 上已有 daemon（可先跑 `gy_jsdesign_mcp_bridge daemon`），且 Cursor 里 jsdesign MCP 为绿灯
 2. 确认端口与 `mcp.json` / `JSDESIGN_MCP_PORT` 一致
 3. 点击插件面板的 **重新连接**
 

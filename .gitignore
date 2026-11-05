@@ -1,5 +1,7 @@
 node_modules/
 *.log
+.npmrc
+mcp-server/.npmrc
 .DS_Store
 design-data.json
 .env

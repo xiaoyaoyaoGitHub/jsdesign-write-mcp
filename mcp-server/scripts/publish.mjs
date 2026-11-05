@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 /**
- * Read mcp-server/.npm-token (gitignored) and publish to npmjs.org.
+ * 读取 mcp-server/.npm-token（已 gitignore）并发布到 npmjs.org。
+ *
+ * 鉴权方式：把 token 直接作为 npm 的 registry 配置项传入命令行参数，
+ * 不依赖 .npmrc，也不依赖 NODE_AUTH_TOKEN 环境变量（npm 不会自动读取）。
  */
 import { readFileSync, existsSync } from "node:fs";
 import { spawnSync } from "node:child_process";
@@ -9,6 +12,7 @@ import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const tokenFile = join(root, ".npm-token");
+const registry = "https://registry.npmjs.org/";
 
 if (!existsSync(tokenFile)) {
   console.error(
@@ -23,19 +27,28 @@ if (!token) {
   process.exit(1);
 }
 
-const result = spawnSync(
-  "npm",
-  ["publish", "--access", "public", "--registry", "https://registry.npmjs.org/"],
-  {
-    cwd: root,
-    env: {
-      ...process.env,
-      NPM_TOKEN: token,
-      NODE_AUTH_TOKEN: token,
-    },
-    stdio: "inherit",
-    shell: true,
-  },
-);
+// 优先使用当前 node 自带的 npm，避免 PATH 上是老版本 npm（如 6.x 不支持 granular token）
+const npmExec = join(dirname(process.execPath), "npm");
+const npmCmd = existsSync(npmExec) ? npmExec : "npm";
+
+const args = [
+  "publish",
+  "--access",
+  "public",
+  "--registry",
+  registry,
+  `--//registry.npmjs.org/:_authToken=${token}`,
+];
+
+// 账号开了 2FA 时，可先 export NPM_OTP=123456 再执行
+if (process.env.NPM_OTP) {
+  args.push("--otp", process.env.NPM_OTP);
+}
+
+const result = spawnSync(npmCmd, args, {
+  cwd: root,
+  stdio: "inherit",
+  shell: false,
+});
 
 process.exit(result.status ?? 1);
