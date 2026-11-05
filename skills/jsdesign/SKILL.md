@@ -58,20 +58,22 @@ get_connection_status（未连通 → 请用户开插件/选画板）
 ## 2. MCP 导出（切图必进项目）
 
 ```text
-get_connection_status（已通过）
+get_connection_status（已通过，记下目标文档的 clientId）
 →（可选）list_top_frames
 → 已选定 assetsDir（绝对路径）
 → export_selection({ includeAssets: true, outputDir: assetsDir })
-→ 若未 includeAssets：export_assets({ outputDir: assetsDir })
-→（可选）get_design_tokens
+→ 若未 includeAssets：export_assets({ clientId, outputDir: assetsDir })
+→（可选）get_design_tokens({ clientId })
 → 按节点树 + localPath 写页面
 ```
+
+> `export_assets` / `get_design_tokens` / `get_node_css` / 全部写回工具都要求 `clientId`：从 `get_connection_status` 返回的已连接文档列表里取，并向用户确认目标文档后再调用。
 
 ### 切图规则
 
 - `outputDir` **必须是业务项目内绝对路径**，禁止只落系统临时目录。
 - 引用用导出结果的 `fills[].localPath` / `assetPath`，再换成目标项目可引用路径。
-- IMAGE fill 不足时：`export_assets({ nodeIds: [...] })` 强制 `exportAsync`。
+- IMAGE fill 不足时：`export_assets({ clientId, nodeIds: [...] })` 强制 `exportAsync`。
 - 同 `imageHash` 只保留一份；导出 JSON 过大（`spilledToFile`）时 Read `path`，勿臆造。
 - 导出后**重命名**为英文 kebab-case，禁止保留设计稿中文层名文件名。
 

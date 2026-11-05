@@ -1,6 +1,6 @@
 {
   "name": "gy_jsdesign_mcp_bridge",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "Fork of jsdesign-mcp-server with write/create capabilities (HTML→design). MIT, original by nothing-sy.",
   "type": "module",
   "main": "dist/index.js",

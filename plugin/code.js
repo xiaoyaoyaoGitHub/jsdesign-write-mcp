@@ -68,6 +68,8 @@ async function handleMethod(method, params) {
       return createTextNode(params);
     case "create_from_json":
       return createFromJson(params);
+    case "delete_node":
+      return deleteNode(params);
     case "ping":
       return { pong: true, at: Date.now() };
     default:
@@ -806,6 +808,132 @@ function round(n, d) {
 
 // ——— write/create methods (fork addition) ———
 
+/** 页面 / 文档根 / 组件 / 锁定节点不允许被删除（破坏性操作的保护面） */
+function isProtectedNode(node) {
+  if (!node) return false;
+  if (node === jsDesign.root) return true;
+  if (node.type === "PAGE" || node.type === "DOCUMENT") return true;
+  // 组件与组件集：删除会连带影响其它页面 / 文件里的实例
+  if (node.type === "COMPONENT" || node.type === "COMPONENT_SET") return true;
+  if (node.locked === true) return true;
+  return false;
+}
+
+/**
+ * Delete nodes by id / name on the current page, or clear all top-level nodes.
+ * 破坏性操作：必须明确指定删除范围，且页面 / 根节点 / 组件 / 锁定节点始终受保护。
+ */
+function deleteNode(params) {
+  const results = [];
+  const errors = [];
+
+  // 空数组 / 空字符串视为「没传」，否则 [] 会被当成有效参数而静默空转
+  const normalizeInput = (value) => {
+    if (Array.isArray(value)) return value.length > 0 ? value : undefined;
+    if (value === undefined || value === null || value === "") return undefined;
+    return value;
+  };
+  const nodeIdInput = normalizeInput(params.nodeId);
+  const nameInput = normalizeInput(params.name);
+  const hasNodeId = nodeIdInput !== undefined;
+  const hasName = nameInput !== undefined;
+  const deleteAllTopLevel = params.allTopLevel === true;
+
+  if (!hasNodeId && !hasName && !deleteAllTopLevel) {
+    throw new Error("delete_node 需要至少提供 nodeId / name / allTopLevel 之一");
+  }
+  if (deleteAllTopLevel && (hasNodeId || hasName)) {
+    throw new Error("allTopLevel 不能与 nodeId / name 同时使用");
+  }
+
+  if (hasNodeId) {
+    const ids = Array.isArray(nodeIdInput) ? nodeIdInput : [nodeIdInput];
+    for (const id of ids) {
+      try {
+        const node = jsDesign.getNodeById(id);
+        if (!node) {
+          errors.push({ id, error: "节点不存在" });
+          continue;
+        }
+        if (isProtectedNode(node)) {
+          errors.push({ id, error: "拒绝删除页面 / 文档根 / 组件 / 锁定节点" });
+          continue;
+        }
+        const name = node.name;
+        node.remove();
+        results.push({ id, name, deleted: true });
+      } catch (e) {
+        errors.push({ id, error: e && e.message ? e.message : String(e) });
+      }
+    }
+  }
+
+  if (hasName) {
+    const names = Array.isArray(nameInput) ? nameInput : [nameInput];
+    for (const nm of names) {
+      try {
+        // 收集命中项时一并记录深度，避免依赖 node.parent 这种平台未保证的属性
+        const matched = [];
+        // 只扫当前页，避免误删其它页面的同名内容
+        const findAndCollect = (root, depth) => {
+          for (const child of root.children || []) {
+            if (child.name === nm) matched.push({ node: child, depth });
+            if ("children" in child && Array.isArray(child.children)) {
+              findAndCollect(child, depth + 1);
+            }
+          }
+        };
+        findAndCollect(jsDesign.currentPage, 0);
+        // 同名父子同时命中时先删子节点，避免父节点删除后产生假错误
+        matched.sort((a, b) => b.depth - a.depth);
+        for (const item of matched) {
+          const node = item.node;
+          try {
+            if (isProtectedNode(node)) continue;
+            const id = node.id;
+            const nm2 = node.name;
+            node.remove();
+            results.push({ id, name: nm2, deleted: true });
+          } catch (e) {
+            errors.push({ name: nm, error: e && e.message ? e.message : String(e) });
+          }
+        }
+        if (matched.length === 0) {
+          errors.push({ name: nm, error: "未找到匹配节点" });
+        }
+      } catch (e) {
+        errors.push({ name: nm, error: e && e.message ? e.message : String(e) });
+      }
+    }
+  }
+
+  if (deleteAllTopLevel) {
+    // Delete all top-level nodes on the current page
+    const page = jsDesign.currentPage;
+    const toDelete = [...(page.children || [])];
+    for (const node of toDelete) {
+      try {
+        if (isProtectedNode(node)) continue;
+        const id = node.id;
+        const nm = node.name;
+        node.remove();
+        results.push({ id, name: nm, deleted: true });
+      } catch (e) {
+        errors.push({ error: e && e.message ? e.message : String(e) });
+      }
+    }
+  }
+
+  return {
+    source: "delete_node",
+    documentName: jsDesign.root.name,
+    page: { id: jsDesign.currentPage.id, name: jsDesign.currentPage.name },
+    deleted: results,
+    deletedCount: results.length,
+    errors,
+  };
+}
+
 /** Resolve a parent by id, fallback to currentPage. */
 function resolveParent(parentId) {
   if (parentId) {
@@ -823,14 +951,19 @@ function resolveParent(parentId) {
 function parseColor(input) {
   if (!input) return undefined;
   if (typeof input === "object" && input !== null) {
-    return {
+    // 对象形态：{r,g,b} / {r,g,b,a}，0–255 与 0–1 都接受
+    const rgb = {
       r: clamp01(input.r),
       g: clamp01(input.g),
       b: clamp01(input.b),
     };
+    if (typeof input.a === "number" && isFinite(input.a)) {
+      rgb.a = Math.max(0, Math.min(1, input.a));
+    }
+    return rgb;
   }
   if (typeof input !== "string") return undefined;
-  const hexMatch = input.match(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/);
+  const hexMatch = input.match(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/);
   if (hexMatch) {
     const hex = hexMatch[1];
     let r, g, b;
@@ -843,30 +976,105 @@ function parseColor(input) {
       g = parseInt(hex.slice(2, 4), 16);
       b = parseInt(hex.slice(4, 6), 16);
     }
-    return { r: r / 255, g: g / 255, b: b / 255 };
+    const out = { r: r / 255, g: g / 255, b: b / 255 };
+    // #rrggbbaa：末两位是 alpha
+    if (hex.length === 8) out.a = parseInt(hex.slice(6, 8), 16) / 255;
+    return out;
   }
   const rgbaMatch = input.match(/rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)(?:[,\s]+([\d.]+))?\s*\)/);
   if (rgbaMatch) {
-    return {
+    const out = {
       r: parseInt(rgbaMatch[1], 10) / 255,
       g: parseInt(rgbaMatch[2], 10) / 255,
       b: parseInt(rgbaMatch[3], 10) / 255,
     };
+    // rgba 的 alpha 必须保留，否则投影等会丢失透明度
+    if (rgbaMatch[4] !== undefined) {
+      out.a = Math.max(0, Math.min(1, parseFloat(rgbaMatch[4])));
+    }
+    return out;
   }
   throw new Error("无法解析颜色: " + input);
 }
 
 function clamp01(n) {
-  if (typeof n !== "number") return 0;
-  if (n > 1) return n / 255;
-  return Math.max(0, Math.min(1, n));
+  if (typeof n !== "number" || Number.isNaN(n)) return 0;
+  // 0–255 视为 8bit 通道，0–1 视为比例；两种情况都夹紧到 [0,1]
+  const v = n > 1 ? n / 255 : n;
+  return Math.max(0, Math.min(1, v));
 }
 
 /** Build a SOLID paint from a color + opacity. */
 function solidPaint(colorInput, opacity) {
   const rgb = parseColor(colorInput);
   if (!rgb) return undefined;
-  return [{ type: "SOLID", color: rgb, opacity: opacity !== undefined ? opacity : 1, visible: true }];
+  // 即时设计的 SOLID paint 只接受 r/g/b，alpha 一律走 opacity
+  const resolvedOpacity =
+    opacity !== undefined ? opacity : rgb.a !== undefined ? rgb.a : 1;
+  return [
+    {
+      type: "SOLID",
+      color: { r: rgb.r, g: rgb.g, b: rgb.b },
+      opacity: resolvedOpacity,
+      visible: true,
+    },
+  ];
+}
+
+/** parseColor 的容错版：无法解析时返回 undefined，而不是抛错中断创建 */
+function safeParseColor(input) {
+  try {
+    return parseColor(input);
+  } catch (e) {
+    return undefined;
+  }
+}
+
+/** 从 {color}/{rgb}/{r,g,b} 形态里取出真正的颜色值 */
+function extractColorInput(value) {
+  if (value === undefined || value === null || value === "") return undefined;
+  if (typeof value === "object") {
+    if (value.color !== undefined && value.color !== null) return value.color;
+    if (value.rgb !== undefined && value.rgb !== null) return value.rgb;
+    if (value.r !== undefined) return value;
+    return undefined;
+  }
+  return value;
+}
+
+/** 取对象上的 opacity，缺省回落到调用方传入的默认值 */
+function pickOpacity(value, fallback) {
+  if (value && typeof value === "object" && typeof value.opacity === "number") {
+    return value.opacity;
+  }
+  return fallback;
+}
+
+/**
+ * 归一 fills 入参为即时设计的 paint 数组，兼容：
+ * `#rrggbb` / `#rrggbbaa` / `rgba(r,g,b,a)` / `{r,g,b}` / `{color:"#hex"}` / `{rgb:{r,g,b}}`、
+ * 上述任意形式的数组、以及原生 SOLID paint 数组。
+ * 无法解析时返回 undefined，保持节点原有填充不变。
+ */
+function normalizeFills(input, opacity) {
+  if (!input) return undefined;
+  if (Array.isArray(input)) {
+    if (input.length === 0) return undefined;
+    const first = input[0];
+    // 已经是 paint 数组（带 type）时原样使用
+    if (first && typeof first === "object" && typeof first.type === "string") {
+      return input;
+    }
+    const color = extractColorInput(first);
+    if (color === undefined) return undefined;
+    return solidPaint(color, pickOpacity(first, opacity));
+  }
+  if (typeof input === "object") {
+    const color = extractColorInput(input);
+    if (color === undefined) return undefined;
+    return solidPaint(color, pickOpacity(input, opacity));
+  }
+  return solidPaint(input, opacity);
 }
 
 /** Apply common node properties (x/y/size/name/fills/strokes/corner/opacity). */
@@ -880,16 +1088,22 @@ function applyNodeProps(node, params) {
     node.resize(w, h);
   }
   if (params.fills) {
-    if (Array.isArray(params.fills) && params.fills.length > 0 && params.fills[0] && typeof params.fills[0] === "object" && params.fills[0].type) {
-      node.fills = params.fills;
-    } else {
-      const paint = solidPaint(params.fills[0] || params.fills, params.fillOpacity);
-      if (paint) node.fills = paint;
-    }
+    const paints = normalizeFills(params.fills, params.fillOpacity);
+    if (paints) node.fills = paints;
   }
   if (params.strokes) {
-    const paint = solidPaint(Array.isArray(params.strokes) ? params.strokes[0] : params.strokes, params.strokeOpacity);
-    if (paint) node.strokes = paint;
+    const rawStrokes = Array.isArray(params.strokes) ? params.strokes[0] : params.strokes;
+    // 原生 paint 数组直接使用（与 fills 对齐）
+    if (rawStrokes && typeof rawStrokes === "object" && typeof rawStrokes.type === "string") {
+      node.strokes = Array.isArray(params.strokes) ? params.strokes : [rawStrokes];
+    } else {
+      // 其余写法与 fills 保持一致："#hex" / {r,g,b} / {color} / {rgb}
+      const strokeColor = extractColorInput(rawStrokes);
+      if (strokeColor !== undefined) {
+        const paint = solidPaint(strokeColor, params.strokeOpacity);
+        if (paint) node.strokes = paint;
+      }
+    }
   }
   if (typeof params.strokeWeight === "number") node.strokeWeight = params.strokeWeight;
   if (typeof params.cornerRadius === "number") node.cornerRadius = params.cornerRadius;
@@ -897,6 +1111,54 @@ function applyNodeProps(node, params) {
   if (typeof params.rotation === "number") node.rotation = params.rotation;
   if (typeof params.visible === "boolean") node.visible = params.visible;
   if (typeof params.locked === "boolean") node.locked = params.locked;
+  // Effects (drop shadow etc.)
+  if (Array.isArray(params.effects)) {
+    // 即时设计支持的 effect 类型；非法项跳过，避免一个坏投影让整棵节点树创建失败
+    const effectTypes = { DROP_SHADOW: 1, INNER_SHADOW: 1, LAYER_BLUR: 1, BACKGROUND_BLUR: 1 };
+    const shadowTypes = { DROP_SHADOW: 1, INNER_SHADOW: 1 };
+    const effects = [];
+    for (const e of params.effects) {
+      if (!e || typeof e !== "object") continue;
+      const type = String(e.type || "").toUpperCase();
+      if (!effectTypes[type]) continue;
+      try {
+        const eff = { type, visible: e.visible !== false };
+        if (shadowTypes[type]) {
+          // 只有阴影类才有混合模式 / 偏移 / 扩散；模糊类只有 radius
+          eff.blendMode = e.blendMode || "NORMAL";
+        }
+        if (typeof e.radius === "number") eff.radius = e.radius;
+        if (e.color !== undefined && e.color !== null) {
+          // 与 fills 一致：支持 "#hex" / {r,g,b} / {color} / {rgb} 四种写法
+          const rgb = safeParseColor(extractColorInput(e.color));
+          if (rgb) {
+            // 透明度优先级：effect.opacity > 颜色自带 alpha > 阴影默认 0.15
+            let alpha = e.opacity;
+            if (typeof alpha === "number") {
+              alpha = Math.max(0, Math.min(1, alpha));
+            } else {
+              alpha = rgb.a !== undefined ? rgb.a : 0.15;
+            }
+            eff.color = { r: rgb.r, g: rgb.g, b: rgb.b, a: alpha };
+          }
+        }
+        if (e.offset && shadowTypes[type]) {
+          eff.offset = { x: e.offset.x || 0, y: e.offset.y || 0 };
+        }
+        if (typeof e.spread === "number" && shadowTypes[type]) eff.spread = e.spread;
+        effects.push(eff);
+      } catch (err) {
+        // 单个 effect 解析失败不影响其它属性写入
+      }
+    }
+    if (effects.length > 0) {
+      try {
+        node.effects = effects;
+      } catch (err) {
+        // 平台拒绝该 effect 组合时不让整个节点创建失败
+      }
+    }
+  }
   // Auto-layout passthrough for frames
   if (params.layoutMode) node.layoutMode = params.layoutMode;
   if (typeof params.itemSpacing === "number") node.itemSpacing = params.itemSpacing;
@@ -961,7 +1223,8 @@ async function createTextNode(params) {
   text.characters = String(params.text);
   if (typeof params.fontSize === "number") text.fontSize = params.fontSize;
   if (params.color) {
-    const paint = solidPaint(params.color, 1);
+    // 兼容 "#hex" / "#rrggbbaa" / "rgba(...)" / {r,g,b} / {color} / {rgb}，alpha 不再被丢弃
+    const paint = solidPaint(extractColorInput(params.color), pickOpacity(params.color, undefined));
     if (paint) text.fills = paint;
   }
   if (typeof params.textAlignHorizontal === "string") text.textAlignHorizontal = params.textAlignHorizontal;
@@ -1023,22 +1286,21 @@ async function createNodeRecursive(spec) {
       break;
     case "TEXT":
       node = jsDesign.createText();
-      const fontName = spec.fontName || { family: "Inter", style: "Regular" };
+      const textFontName = spec.fontName || { family: "Inter", style: "Regular" };
       try {
-        await jsDesign.loadFontAsync(fontName);
-        node.fontName = fontName;
+        await jsDesign.loadFontAsync(textFontName);
+        node.fontName = textFontName;
       } catch (e) {
-        await jsDesign.loadFontAsync(node.fontName);
+        try {
+          await jsDesign.loadFontAsync(node.fontName);
+        } catch (e2) {
+          await jsDesign.loadFontAsync({ family: "Inter", style: "Regular" });
+        }
       }
       node.characters = String(spec.characters || "");
       if (typeof spec.fontSize === "number") node.fontSize = spec.fontSize;
-      if (Array.isArray(spec.fills) && spec.fills.length > 0 && spec.fills[0] && spec.fills[0].rgb) {
-        node.fills = [{ type: "SOLID", color: spec.fills[0].rgb, opacity: 1, visible: true }];
-      } else if (Array.isArray(spec.fills) && spec.fills.length > 0 && spec.fills[0] && typeof spec.fills[0].color === "string") {
-        const paint = solidPaint(spec.fills[0].color, 1);
-        if (paint) node.fills = paint;
-      }
-      applyNodeProps(node, spec); // x/y/width/height/name...
+      // Let applyNodeProps handle fills uniformly (it supports SOLID paints with color objects)
+      applyNodeProps(node, spec);
       break;
     case "ELLIPSE":
       node = jsDesign.createEllipse();

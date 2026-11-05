@@ -418,7 +418,13 @@ export function registerTools(server: McpServer, bridge: BridgeLike): void {
         .describe("单次最多导出张数，默认 50"),
       skipHidden: z.boolean().optional(),
       skipInstanceChildren: z.boolean().optional(),
-      clientId: z.string().optional(),
+      clientId: z
+        .string()
+        .trim()
+        .min(1, "clientId 不能为空；请先调用 get_connection_status 获取已连接文档列表")
+        .describe(
+          "目标文档的客户端 id。必须先调 get_connection_status 获取已连接文档列表，向用户确认目标文档后再传入对应的 clientId，避免创建到错误文档。",
+        ),
     },
     async (args) => {
       try {
@@ -461,7 +467,13 @@ export function registerTools(server: McpServer, bridge: BridgeLike): void {
     {
       nodeId: z.string().optional().describe("可选：从该节点子树提取；默认当前选区"),
       name: z.string().optional().describe("可选：按名称定位节点"),
-      clientId: z.string().optional(),
+      clientId: z
+        .string()
+        .trim()
+        .min(1, "clientId 不能为空；请先调用 get_connection_status 获取已连接文档列表")
+        .describe(
+          "目标文档的客户端 id。必须先调 get_connection_status 获取已连接文档列表，向用户确认目标文档后再传入对应的 clientId，避免创建到错误文档。",
+        ),
     },
     async (args) => {
       try {
@@ -483,7 +495,13 @@ export function registerTools(server: McpServer, bridge: BridgeLike): void {
     {
       nodeId: z.string().optional(),
       name: z.string().optional(),
-      clientId: z.string().optional(),
+      clientId: z
+        .string()
+        .trim()
+        .min(1, "clientId 不能为空；请先调用 get_connection_status 获取已连接文档列表")
+        .describe(
+          "目标文档的客户端 id。必须先调 get_connection_status 获取已连接文档列表，向用户确认目标文档后再传入对应的 clientId，避免创建到错误文档。",
+        ),
     },
     async (args) => {
       try {
@@ -508,7 +526,13 @@ export function registerTools(server: McpServer, bridge: BridgeLike): void {
       .string()
       .optional()
       .describe("父节点 id；不传则挂到当前页（currentPage）顶层"),
-    clientId: z.string().optional().describe("可选客户端 id"),
+    clientId: z
+      .string()
+      .trim()
+      .min(1, "clientId 不能为空；请先调用 get_connection_status 获取已连接文档列表")
+      .describe(
+        "目标文档的客户端 id。必须先调 get_connection_status 获取已连接文档列表，向用户确认目标文档后再传入对应的 clientId，避免创建到错误文档。",
+      ),
   };
 
   const paintShape = z
@@ -658,7 +682,13 @@ export function registerTools(server: McpServer, bridge: BridgeLike): void {
         .string()
         .optional()
         .describe("父节点 id；不传则挂到当前页顶层"),
-      clientId: z.string().optional(),
+      clientId: z
+        .string()
+        .trim()
+        .min(1, "clientId 不能为空；请先调用 get_connection_status 获取已连接文档列表")
+        .describe(
+          "目标文档的客户端 id。必须先调 get_connection_status 获取已连接文档列表，向用户确认目标文档后再传入对应的 clientId，避免创建到错误文档。",
+        ),
     },
     writeToolAnnotations,
     async (args) => {
@@ -667,6 +697,56 @@ export function registerTools(server: McpServer, bridge: BridgeLike): void {
         const result = await bridge.call("create_from_json", params, {
           clientId,
           timeoutMs: 180_000,
+        });
+        return textResult(result);
+      } catch (e) {
+        return errResult(e);
+      }
+    },
+  );
+
+  server.tool(
+    "delete_node",
+    "删除画布上的节点。可按 nodeId 删除单个/多个，按 name 删除所有匹配节点，或 allTopLevel=true 清空当前页顶层节点。谨慎使用。",
+    {
+      nodeId: z
+        .union([z.string(), z.array(z.string())])
+        .optional()
+        .describe("要删除的节点 id（单个或数组）"),
+      name: z
+        .union([z.string(), z.array(z.string())])
+        .optional()
+        .describe("按名称删除所有匹配节点（单个或数组）"),
+      allTopLevel: z
+        .boolean()
+        .optional()
+        .describe("为 true 时删除当前页所有顶层节点（清空画板）"),
+      clientId: z
+        .string()
+        .trim()
+        .min(1, "clientId 不能为空；请先调用 get_connection_status 获取已连接文档列表")
+        .describe(
+          "目标文档的客户端 id。必须先调 get_connection_status 获取已连接文档列表，向用户确认目标文档后再传入对应的 clientId，避免创建到错误文档。",
+        ),
+    },
+    writeToolAnnotations,
+    async (args) => {
+      try {
+        const { clientId, ...params } = args;
+        // 破坏性操作：必须在工具层先拦住「什么都没指定」的调用，避免静默空转
+        if (!params.nodeId && !params.name && params.allTopLevel !== true) {
+          return errResult(
+            new Error("delete_node 需要至少提供 nodeId / name / allTopLevel 之一"),
+          );
+        }
+        if (params.allTopLevel === true && (params.nodeId || params.name)) {
+          return errResult(
+            new Error("allTopLevel 不能与 nodeId / name 同时使用"),
+          );
+        }
+        const result = await bridge.call("delete_node", params, {
+          clientId,
+          timeoutMs: 30_000,
         });
         return textResult(result);
       } catch (e) {

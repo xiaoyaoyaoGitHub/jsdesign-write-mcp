@@ -4,6 +4,28 @@
 
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循 [SemVer](https://semver.org/lang/zh-CN/)。
 
+## [2.2.0] - 2026-11-05
+
+### Added
+
+- 新增 `delete_node` 工具：按 `nodeId`（单个 / 数组）、`name`（单个 / 数组）删除节点，或 `allTopLevel=true` 清空当前页顶层节点；插件侧同步实现 `delete_node` RPC
+- 插件：节点属性支持 `effects`（投影 / 内阴影 / 模糊），带类型白名单与容错，单个 effect 解析失败不再中断整棵节点树
+- 插件：`fills` 归一化，兼容 `#rrggbb` / `#rrggbbaa` / `rgba(r,g,b,a)` / `{r,g,b}` / `{color}` / `{rgb}` 及它们组成的数组
+- 插件：文字节点字体加载增加兜底（失败时回退 `Inter Regular`），填充统一交由 `applyNodeProps` 处理
+- 插件：`strokes`、文字 `color` 与 effect 颜色统一支持 `#hex` / `#rrggbbaa` / `rgba(...)` / `{r,g,b}` / `{color}` / `{rgb}`，alpha 不再被丢弃
+
+### Fixed
+
+- 修复 `fills` 传裸对象（如 `{r,g,b}`）时被静默忽略、以及 `{rgb}` / `{color}` 形态被当成纯黑的问题
+- 修复 `clamp01` 对越界值（>255、NaN）不夹紧导致写入非法颜色通道的问题
+- 修复 `delete_node` 缺参数时静默空转、按 `name` 会跨页删除、以及可能误删页面 / 根节点的问题
+- 修复传过期 `clientId` 时错误文案误报「插件未连接」的问题
+
+### Changed
+
+- `export_assets`、`get_design_tokens`、`get_node_css`、`create_frame`、`create_rectangle`、`create_text`、`create_from_json`、`delete_node` 的 `clientId` 改为**必填**（空串会被拒绝），工具描述要求先调 `get_connection_status` 并向用户确认目标文档，避免写错文档
+- 版本号统一为 `2.2.0`：根 `package.json`、`mcp-server/package.json`、`manifest.version`、MCP 自报版本、插件面板展示
+
 ## [2.0.0] - 2026-08-07
 
 ### Changed

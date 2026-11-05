@@ -169,8 +169,11 @@ export class Bridge implements BridgeLike {
   ): Promise<unknown> {
     const client = this.getPrimaryPlugin(options.clientId);
     if (!client) {
+      // 区分「根本没插件连上」和「指定的 clientId 已失效（插件重连换 id）」
       throw new Error(
-        "即时设计插件未连接。请在即时设计中打开「GY Design MCP Bridge」插件，并确认状态为「已连接」。",
+        options.clientId
+          ? `未找到 clientId=${options.clientId} 的已连接文档（插件重连后 id 会变化）。请重新调用 get_connection_status 获取最新 clientId 后再试。`
+          : "即时设计插件未连接。请在即时设计中打开「GY Design MCP Bridge」插件，并确认状态为「已连接」。",
       );
     }
 

@@ -48,7 +48,7 @@
 | `get_design_tokens` | 汇总颜色 / 字号 / 间距 / 圆角 |
 | `get_node_css` | 输出节点的 CSS 描述 |
 
-### 写入画布（4 个工具）
+### 写入画布（5 个工具）
 
 | 工具 | 作用 |
 |---|---|
@@ -56,8 +56,13 @@
 | `create_rectangle` | 创建矩形（色块、底色、分割线） |
 | `create_text` | 创建文字（自动加载字体） |
 | `create_from_json` | 递归创建整棵节点树（Frame / 矩形 / 文字 / 椭圆 / 直线 + 子节点） |
+| `delete_node` | 按 id / 名称删除节点，或清空当前页顶层节点（破坏性操作，需先确认目标文档） |
 
-颜色参数支持 `#rrggbb`、`#rgb`、`rgba(r,g,b,a)`、`{r,g,b}`（0–1 或 0–255 均可）。
+颜色参数支持 `#rrggbb`、`#rrggbbaa`、`#rgb`、`rgba(r,g,b,a)`、`{r,g,b}`、`{color}`、`{rgb}`（0–1 或 0–255 均可）。节点还支持 `effects`（投影 / 内阴影 / 模糊）、`layoutMode` 自动布局等属性。
+
+> 以下 8 个工具**必须**传 `clientId`：`export_assets`、`get_design_tokens`、`get_node_css`、`create_frame`、`create_rectangle`、`create_text`、`create_from_json`、`delete_node`。先调 `get_connection_status` 拿到已连接文档列表，向用户确认目标文档后再调用，避免误改到别的文件。
+
+> `delete_node` 是破坏性操作：必须指定 `nodeId` / `name` / `allTopLevel` 之一（不能同时用 `allTopLevel` 与另外两者），按名称只在**当前页**匹配，页面 / 文档根 / 组件 / 锁定节点一律拒绝删除。
 
 ---
 

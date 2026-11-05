@@ -3,7 +3,7 @@
 > Fork of [nothing-sy/js.design](https://github.com/nothing-sy/js.design) (MIT).  
 > Adds **write/create** capabilities on top of the original read-only MCP server — lets an Agent create Frames / Rectangles / Text / nested node trees directly on the js.design canvas, enabling the **HTML → editable design** direction the upstream does not support.
 
-即时设计（[js.design](https://js.design)）MCP Server（读写增强版）：在原版导出能力之上，新增 `create_frame` / `create_rectangle` / `create_text` / `create_from_json` 四个写入工具。
+即时设计（[js.design](https://js.design)）MCP Server（读写增强版）：在原版导出能力之上，新增 `create_frame` / `create_rectangle` / `create_text` / `create_from_json` / `delete_node` 五个写入工具。
 
 完整文档与原项目：https://github.com/nothing-sy/js.design
 
@@ -13,14 +13,14 @@
 - **stdio MCP（默认）**：Agent 拉起的 stdio 进程，作为 agent 接入已有 daemon。
 - **即时设计插件**：跑在即时设计桌面端里，通过 WS 收发 RPC，真正调用 `jsDesign.*` Plugin API。
 
-fork 仅改了 **插件端 `plugin/code.js`** 和 **server 端 `mcp-server/src/tools.ts`**，daemon / bridge / ui.html 全部不动。
+fork 主要改动 **插件端 `plugin/code.js`** 与 **server 端 `mcp-server/src/tools.ts`**；本轮另改了 `bridge.ts` 的过期 clientId 错误文案与插件面板版本号，daemon 架构本身未动。
 
-## 工具清单（共 14 个）
+## 工具清单（共 15 个）
 
 ### 只读（原版 10 个，保留）
 `get_connection_status` · `get_document_info` · `list_pages` · `list_top_frames` · `export_selection` · `export_node` · `export_page` · `export_assets` · `get_design_tokens` · `get_node_css`
 
-### 写入（fork 新增 4 个）
+### 写入（fork 新增 5 个）
 
 | 工具 | 参数 | 说明 |
 |---|---|---|
@@ -28,8 +28,11 @@ fork 仅改了 **插件端 `plugin/code.js`** 和 **server 端 `mcp-server/src/t
 | `create_rectangle` | `{ name?, x?, y?, width?, height?, fills?, cornerRadius?, ...parentId? }` | 创建矩形（色块/底色） |
 | `create_text` | `{ text, fontName?, fontSize?, color?, x?, y?, ...parentId? }` | 创建文字（自动 loadFontAsync） |
 | `create_from_json` | `{ nodes: DesignNode[], parentId? }` | 递归创建节点树，支持 FRAME/RECTANGLE/TEXT/ELLIPSE/LINE + children 嵌套 |
+| `delete_node` | `{ nodeId? \| name?, allTopLevel? }` | 按 id / 名称删除节点，或清空当前页顶层节点（破坏性操作） |
 
-颜色参数统一支持 `#rrggbb` / `#rgb` / `rgba(r,g,b,a)` / `{r,g,b}`（0-1 或 0-255 均可）。
+> `clientId` 为**必填**的工具共 8 个：`export_assets`、`get_design_tokens`、`get_node_css`、`create_frame`、`create_rectangle`、`create_text`、`create_from_json`、`delete_node`。先调 `get_connection_status` 拿到已连接文档列表，向用户确认目标文档后再传入，避免写错文件。
+
+颜色参数统一支持 `#rrggbb` / `#rrggbbaa` / `#rgb` / `rgba(r,g,b,a)` / `{r,g,b}` / `{color}` / `{rgb}`（0-1 或 0-255 均可），`fills` / `strokes` / 文字 `color` / effect 颜色写法一致。
 
 ## 快速开始
 

@@ -183,7 +183,7 @@ async function runMcp(): Promise<void> {
 
   const server = new McpServer({
     name: "gy_jsdesign_mcp_bridge",
-    version: "2.1.0",
+    version: "2.2.0",
   });
 
   registerTools(server, client);

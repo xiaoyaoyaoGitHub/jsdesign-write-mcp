@@ -3,8 +3,8 @@
 即时设计 MCP：导出设计稿节点树，供 Cursor Agent 写页面（只读，不写回画布）。
 
 - 仓库：https://github.com/nothing-sy/js.design
-- npm：[`jsdesign-mcp-server@2.0.0`](https://www.npmjs.com/package/jsdesign-mcp-server)
-- 插件 / npm 版本：`2.0.0`（见 [`plugin/manifest.json`](plugin/manifest.json)）
+- npm：上游只读版 [`jsdesign-mcp-server@2.0.0`](https://www.npmjs.com/package/jsdesign-mcp-server)
+- 插件版本：`2.2.0`（见 [`plugin/manifest.json`](plugin/manifest.json) / 面板右上角）· 服务端包名：`gy_jsdesign_mcp_bridge`（本仓库 fork 版，尚未发布到 npm）
 - 版本日志：[mcp-server/CHANGELOG.md](mcp-server/CHANGELOG.md)
 
 **环境要求**：Node.js 18+ · [即时设计桌面端](https://js.design/download) · [Cursor](https://cursor.com)
