@@ -87,16 +87,18 @@
 **方式 A：npx 直接运行（推荐，免安装）**
 
 ```bash
-npx github:xiaoyaoyaoGitHub/jsdesign-write-mcp daemon
+npx "github:xiaoyaoyaoGitHub/jsdesign-write-mcp#v2.2.0" daemon
 ```
 
 **方式 B：全局安装**
 
 ```bash
-npm i -g github:xiaoyaoyaoGitHub/jsdesign-write-mcp
+npm i -g "github:xiaoyaoyaoGitHub/jsdesign-write-mcp#v2.2.0"
 ```
 
 安装完成后可直接使用命令 `gy_jsdesign_mcp_bridge`。仓库内已包含构建产物 `mcp-server/dist/`，从 git 安装不需要再编译。
+
+> `#v2.2.0` 是版本锁定：保证你装到的就是这一版；不写则跟随仓库最新提交。
 
 ### 第 2 步：在 AI 客户端里配置 MCP
 
@@ -107,7 +109,7 @@ npm i -g github:xiaoyaoyaoGitHub/jsdesign-write-mcp
   "mcpServers": {
     "jsdesign": {
       "command": "npx",
-      "args": ["github:xiaoyaoyaoGitHub/jsdesign-write-mcp"]
+      "args": ["github:xiaoyaoyaoGitHub/jsdesign-write-mcp#v2.2.0"]
     }
   }
 }
@@ -123,7 +125,7 @@ npm i -g github:xiaoyaoyaoGitHub/jsdesign-write-mcp
 
 ```bash
 gy_jsdesign_mcp_bridge daemon
-# 未全局安装时：npx github:xiaoyaoyaoGitHub/jsdesign-write-mcp daemon
+# 未全局安装时：npx "github:xiaoyaoyaoGitHub/jsdesign-write-mcp#v2.2.0" daemon
 ```
 
 > 一般无需手动执行：AI 客户端启用 MCP 时会自动拉起 daemon。

@@ -39,10 +39,12 @@ fork 主要改动 **插件端 `plugin/code.js`** 与 **server 端 `mcp-server/sr
 ### 0. 最省事：直接跑仓库（免编译，dist 已入库）
 
 ```bash
-npx github:xiaoyaoyaoGitHub/jsdesign-write-mcp daemon
+npx "github:xiaoyaoyaoGitHub/jsdesign-write-mcp#v2.2.0" daemon
 ```
 
-MCP 客户端配置：`{"command":"npx","args":["github:xiaoyaoyaoGitHub/jsdesign-write-mcp"]}`
+MCP 客户端配置：`{"command":"npx","args":["github:xiaoyaoyaoGitHub/jsdesign-write-mcp#v2.2.0"]}`
+
+> `#v2.2.0` 锁定版本；去掉则跟随仓库最新提交。
 
 ### 1. 本地开发（仓库已在 `~/Documents/项目/jsdesign-write-mcp/`）
 

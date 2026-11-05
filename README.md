@@ -38,14 +38,16 @@ Cursor MCP stdio ──agent 接入──► 同上 daemon（Cursor 启停不立
 **方式 A：npx 直接运行（推荐，免安装、免构建）**
 
 ```bash
-npx github:xiaoyaoyaoGitHub/jsdesign-write-mcp daemon
+npx "github:xiaoyaoyaoGitHub/jsdesign-write-mcp#v2.2.0" daemon
 ```
 
 **方式 B：全局安装**
 
 ```bash
-npm i -g github:xiaoyaoyaoGitHub/jsdesign-write-mcp
+npm i -g "github:xiaoyaoyaoGitHub/jsdesign-write-mcp#v2.2.0"
 ```
+
+> 结尾的 `#v2.2.0` 是**版本锁定**：不写它会跟随 `main` 最新提交，上游一推新代码你这边就跟着变。升级时把 `v2.2.0` 换成新 tag 即可。
 
 安装后可直接使用命令：
 
@@ -75,7 +77,7 @@ gy_jsdesign_mcp_bridge daemon
   "mcpServers": {
     "jsdesign": {
       "command": "npx",
-      "args": ["github:xiaoyaoyaoGitHub/jsdesign-write-mcp"]
+      "args": ["github:xiaoyaoyaoGitHub/jsdesign-write-mcp#v2.2.0"]
     }
   }
 }
@@ -88,7 +90,7 @@ gy_jsdesign_mcp_bridge daemon
   "mcpServers": {
     "jsdesign": {
       "command": "npx",
-      "args": ["github:xiaoyaoyaoGitHub/jsdesign-write-mcp"],
+      "args": ["github:xiaoyaoyaoGitHub/jsdesign-write-mcp#v2.2.0"],
       "env": {
         "JSDESIGN_MCP_PORT": "3848"
       }
@@ -214,7 +216,7 @@ MCP 绿灯后，再在即时设计里装插件并连上 WebSocket。
 | 无选中节点 | 先在画布选中目标 Frame |
 | 端口占用（非本 daemon） | 结束占用进程，或设 `JSDESIGN_MCP_PORT` 换端口，并同步改插件面板里的地址 |
 | 旧版 MCP 占着 3847 | 结束旧 `node` 进程后执行 `gy_jsdesign_mcp_bridge daemon` |
-| 命令找不到 | 用 `npx github:xiaoyaoyaoGitHub/jsdesign-write-mcp`，或 `npm i -g github:xiaoyaoyaoGitHub/jsdesign-write-mcp` |
+| 命令找不到 | 用 `npx "github:xiaoyaoyaoGitHub/jsdesign-write-mcp#v2.2.0"`，或 `npm i -g "github:xiaoyaoyaoGitHub/jsdesign-write-mcp#v2.2.0"` |
 
 ---
 
