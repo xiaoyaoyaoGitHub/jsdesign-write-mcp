@@ -45,6 +45,8 @@ npx "github:xiaoyaoyaoGitHub/jsdesign-write-mcp#v2.2.0" daemon
 MCP 客户端配置：`{"command":"npx","args":["github:xiaoyaoyaoGitHub/jsdesign-write-mcp#v2.2.0"]}`
 
 > `#v2.2.0` 锁定版本；去掉则跟随仓库最新提交。
+> npx 方式每次启动都要重新拉包（实测约 20–40 秒）。想秒开就先全局安装：
+> `npm i -g "github:xiaoyaoyaoGitHub/jsdesign-write-mcp#v2.2.0"`，再把 `command` 换成 `gy_jsdesign_mcp_bridge`、去掉 `args`。
 
 ### 1. 本地开发（仓库已在 `~/Documents/项目/jsdesign-write-mcp/`）
 

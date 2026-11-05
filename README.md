@@ -35,19 +35,21 @@ Cursor MCP stdio ──agent 接入──► 同上 daemon（Cursor 启停不立
 
 ## 1. 安装 MCP 服务
 
-**方式 A：npx 直接运行（推荐，免安装、免构建）**
+**方式 A：npx 直接运行（免安装，但每次启动都要重新拉包，约 20–40 秒）**
 
 ```bash
 npx "github:xiaoyaoyaoGitHub/jsdesign-write-mcp#v2.2.0" daemon
 ```
 
-**方式 B：全局安装**
+> 用 npx 时每次打开 Cursor 都要等这段时间，客户端可能先显示红灯，稍等会转绿。嫌慢就用方式 B。
+
+**方式 B：全局安装（推荐，装一次，之后秒开）**
 
 ```bash
 npm i -g "github:xiaoyaoyaoGitHub/jsdesign-write-mcp#v2.2.0"
 ```
 
-> 结尾的 `#v2.2.0` 是**版本锁定**：不写它会跟随 `main` 最新提交，上游一推新代码你这边就跟着变。升级时把 `v2.2.0` 换成新 tag 即可。
+> 结尾的 `#v2.2.0` 是**版本锁定**：不写它会跟随 `main` 最新提交，仓库一推新代码你这边就跟着变。升级时把 `v2.2.0` 换成新 tag 即可。
 
 安装后可直接使用命令：
 
