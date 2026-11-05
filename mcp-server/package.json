@@ -1,11 +1,11 @@
 {
-  "name": "jsdesign-mcp-server",
-  "version": "2.0.0",
-  "description": "MCP server that bridges Instant Design (js.design) plugin to Cursor/Claude for design-to-code",
+  "name": "gy_jsdesign_mcp_bridge",
+  "version": "2.1.0",
+  "description": "Fork of jsdesign-mcp-server with write/create capabilities (HTML→design). MIT, original by nothing-sy.",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "jsdesign-mcp": "dist/index.js"
+    "gy_jsdesign_mcp_bridge": "dist/index.js"
   },
   "files": [
     "dist",
@@ -30,9 +30,11 @@
     "jsdesign",
     "instant-design",
     "cursor",
-    "design-to-code"
+    "design-to-code",
+    "html-to-design",
+    "write"
   ],
-  "author": "nothing-sy",
+  "author": "wangly (fork of nothing-sy/js.design)",
   "license": "MIT",
   "repository": {
     "type": "git",

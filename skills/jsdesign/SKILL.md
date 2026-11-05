@@ -1,7 +1,7 @@
 ---
 name: jsdesign
 description: >-
-  Use the JsDesign MCP Bridge (即时设计 / jsdesign) to export design trees and
+  Use the GY Design MCP Bridge (即时设计 / jsdesign) to export design trees and
   image assets, then implement pages matching the target project's structure
   and style—with dynamic-field placeholders for later API wiring. Use when the
   user mentions 即时设计, jsdesign, MCP, export_selection, export_assets,
@@ -25,10 +25,10 @@ get_connection_status（未连通 → 请用户开插件/选画板）
 
 ## 0. MCP 连通（前置，必须）
 
-命名空间：`user-jsdesign`。WebSocket 桥由 `jsdesign-mcp daemon` 提供（无连接空闲 15 分钟后自动退出）；Cursor MCP 仅 attach，一般无需关心端口。
+命名空间：`user-jsdesign`。WebSocket 桥由 `gy_jsdesign_mcp_bridge daemon` 提供（无连接空闲 15 分钟后自动退出）；Cursor MCP 仅 attach，一般无需关心端口。
 
 1. 调用 `get_connection_status`（或任意 jsdesign 工具探测）。
-2. **未连通**：提示用户在即时设计中打开「JsDesign MCP Bridge」、保持面板打开，并选中目标画板；必要时请用户在 Cursor 中开关一次 jsdesign MCP。
+2. **未连通**：提示用户在即时设计中打开「GY Design MCP Bridge」、保持面板打开，并选中目标画板；必要时请用户在 Cursor 中开关一次 gy_jsdesign_mcp_bridge MCP。
 3. **未连通前禁止臆造设计树或跳过切图。**
 
 大画板用 `list_top_frames` 确认目标 Frame，再导出。
@@ -120,7 +120,7 @@ get_connection_status（已通过）
 
 | 现象 | 处理 |
 |------|------|
-| 插件未连接 | 打开「JsDesign MCP Bridge」、保持面板；必要时开关一次 Cursor 中的 jsdesign MCP |
+| 插件未连接 | 打开「GY Design MCP Bridge」、保持面板；必要时开关一次 Cursor 中的 gy_jsdesign_mcp_bridge MCP |
 | 无选中 | 画布选中目标 Frame |
 | 页面无图 | 补 `export_assets` / `includeAssets`，检查 `outputDir` 与引用 |
 | 切图不全 | `nodeIds` 强制导出，或设计侧加 exportSettings |

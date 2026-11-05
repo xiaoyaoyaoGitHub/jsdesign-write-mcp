@@ -1,57 +1,94 @@
-# jsdesign-mcp-server
+# gy_jsdesign_mcp_bridge
 
-即时设计（[js.design](https://js.design)）MCP Server：把设计稿节点树导出给 Cursor / Claude 等 Agent，用于设计稿 → 代码。
+> Fork of [nothing-sy/js.design](https://github.com/nothing-sy/js.design) (MIT).  
+> Adds **write/create** capabilities on top of the original read-only MCP server — lets an Agent create Frames / Rectangles / Text / nested node trees directly on the js.design canvas, enabling the **HTML → editable design** direction the upstream does not support.
 
-完整文档：https://github.com/nothing-sy/js.design
+即时设计（[js.design](https://js.design)）MCP Server（读写增强版）：在原版导出能力之上，新增 `create_frame` / `create_rectangle` / `create_text` / `create_from_json` 四个写入工具。
 
-版本日志：[CHANGELOG.md](CHANGELOG.md)
+完整文档与原项目：https://github.com/nothing-sy/js.design
 
-## 架构
+## 架构（未改动）
 
-- **`jsdesign-mcp daemon`**：WebSocket 桥，固定监听 `ws://127.0.0.1:3847`（可用 `JSDESIGN_MCP_PORT`），供即时设计插件连接。无任何客户端（agent + 插件）持续 15 分钟后自动退出（可用 `JSDESIGN_MCP_IDLE_MS` 覆盖；`0` 禁用）。
-- **`jsdesign-mcp`（默认）**：Cursor 拉起的 stdio MCP；作为 agent 接入已有 daemon。若 daemon 未运行会自动 detached 拉起；**退出 Cursor 不会立刻关掉 daemon**（仍保留空闲宽限，便于插件保活）。
+- **daemon**：WebSocket 桥，监听 `ws://127.0.0.1:3847`（`JSDESIGN_MCP_PORT` 可覆盖）。
+- **stdio MCP（默认）**：Agent 拉起的 stdio 进程，作为 agent 接入已有 daemon。
+- **即时设计插件**：跑在即时设计桌面端里，通过 WS 收发 RPC，真正调用 `jsDesign.*` Plugin API。
+
+fork 仅改了 **插件端 `plugin/code.js`** 和 **server 端 `mcp-server/src/tools.ts`**，daemon / bridge / ui.html 全部不动。
+
+## 工具清单（共 14 个）
+
+### 只读（原版 10 个，保留）
+`get_connection_status` · `get_document_info` · `list_pages` · `list_top_frames` · `export_selection` · `export_node` · `export_page` · `export_assets` · `get_design_tokens` · `get_node_css`
+
+### 写入（fork 新增 4 个）
+
+| 工具 | 参数 | 说明 |
+|---|---|---|
+| `create_frame` | `{ name?, x?, y?, width?, height?, fills?, strokes?, cornerRadius?, layoutMode?, ...parentId? }` | 创建 Frame（容器/画板） |
+| `create_rectangle` | `{ name?, x?, y?, width?, height?, fills?, cornerRadius?, ...parentId? }` | 创建矩形（色块/底色） |
+| `create_text` | `{ text, fontName?, fontSize?, color?, x?, y?, ...parentId? }` | 创建文字（自动 loadFontAsync） |
+| `create_from_json` | `{ nodes: DesignNode[], parentId? }` | 递归创建节点树，支持 FRAME/RECTANGLE/TEXT/ELLIPSE/LINE + children 嵌套 |
+
+颜色参数统一支持 `#rrggbb` / `#rgb` / `rgba(r,g,b,a)` / `{r,g,b}`（0-1 或 0-255 均可）。
 
 ## 快速开始
 
-### 1. 全局安装
+### 1. 本地使用（已 fork 到 `~/Documents/项目/jsdesign-write-mcp/`）
 
-```bash
-npm i -g jsdesign-mcp-server@2.0.0
-```
-
-### 2. 配置 Cursor MCP
-
-编辑 `%USERPROFILE%\.cursor\mcp.json`（macOS / Linux：`~/.cursor/mcp.json`）：
+无需 npm 发布，直接指向本地编译产物。编辑 ZCode 用户级 MCP 配置 `~/.zcode/cli/config.json`：
 
 ```json
 {
-  "mcpServers": {
-    "jsdesign": {
-      "command": "jsdesign-mcp"
+  "mcp": {
+    "servers": {
+      "gy_jsdesign_mcp_bridge": {
+        "type": "stdio",
+        "command": "/Users/wangly/.nvm/versions/node/v20.19.6/bin/node",
+        "args": [
+          "/Users/wangly/Documents/项目/jsdesign-write-mcp/mcp-server/dist/index.js"
+        ]
+      }
     }
   }
 }
 ```
 
-在 Cursor **Settings → MCP** 中确认 **jsdesign** 为绿灯。
+Cursor / Claude Desktop 同理，改各自的 `mcp.json` 路径即可。
 
-可选预热守护进程：
+### 2. 导入即时设计插件（必须，每次新机器都要做）
 
-```bash
-jsdesign-mcp daemon
+即时设计桌面端 → **插件** → **开发者** → **导入插件** → 选择：
+
+```
+/Users/wangly/Documents/项目/jsdesign-write-mcp/plugin/manifest.json
 ```
 
-### 3. 导入即时设计插件
+> 注意：fork 版插件的 `id` 已改为 `wly_jsdesign_write_2026`，与原版 `JsDesign MCP Bridge` 不冲突，两者可共存。但同一时间只能运行一个连 3847 端口的插件——建议在插件管理里禁用原版，只保留 fork 版。
 
-- **推荐**：即时设计 → **插件** → 搜索 **JsDesign MCP Bridge** → 安装并运行
-- **开发者导入**：克隆 https://github.com/nothing-sy/js.design ，再 **插件 → 开发者 → 导入插件** → 选择 `plugin/manifest.json`
+### 3. 构建（改了 `tools.ts` 或 `code.js` 后需要重新构建 server）
 
-面板显示「已连接」即可（地址默认 `ws://127.0.0.1:3847`）。
+```bash
+cd /Users/wangly/Documents/项目/jsdesign-write-mcp/mcp-server
+npm install
+npm run build   # tsc → dist/
+```
+
+插件端 `plugin/code.js` 是纯 JS，改完直接在即时设计里重新运行插件即可生效，无需构建。
 
 ### 4. 使用
 
-在画布选中目标画板，让 Agent 调用 `export_selection` 即可写页面。
+1. 即时设计里打开插件面板，确认「已连接」
+2. Agent 调 `create_frame` / `create_text` / `create_from_json` 等写入画布
+3. 端到端：把 HTML 解析成 `DesignNode[]` 树，调 `create_from_json` 一次性导入
+
+## HTML → 即时设计完整链路
+
+```
+HTML  ──解析──▶  DesignNode[] JSON  ──create_from_json──▶  即时设计画布（可编辑）
+```
+
+Agent 读 HTML，按 `DesignNode` schema 构造节点数组（FRAME 嵌 RECTANGLE/TEXT + children），调 `create_from_json` 递归落盘。
 
 ## License
 
-MIT
+MIT — fork 自 [nothing-sy/js.design](https://github.com/nothing-sy/js.design)，保留原作者版权声明。

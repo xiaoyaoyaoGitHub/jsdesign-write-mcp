@@ -1,8 +1,7 @@
 {
-  "name": "JsDesign MCP Bridge",
-  "id": "24jy7fqbftu17848840",
+  "name": "GY Design MCP Brideg",
+  "id": "wly_jsdesign_write_2026",
   "api": "2.0.0",
   "main": "code.js",
-  "ui": "ui.html",
-  "version": "2.0.0"
+  "ui": "ui.html"
 }

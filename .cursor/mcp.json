@@ -1,8 +1,8 @@
 {
   "mcpServers": {
-    "jsdesign": {
-      "command": "npx",
-      "args": ["-y", "jsdesign-mcp-server"]
+    "gy_jsdesign_mcp_bridge": {
+      "command": "node",
+      "args": ["/Users/wangly/Documents/项目/jsdesign-write-mcp/mcp-server/dist/index.js"]
     }
   }
 }

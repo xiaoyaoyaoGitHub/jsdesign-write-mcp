@@ -19,7 +19,7 @@ function textResult(data: unknown) {
     typeof data === "string" ? data : JSON.stringify(data, null, 2);
 
   if (text.length > LARGE_JSON_CHARS) {
-    const dir = join(tmpdir(), "jsdesign-mcp");
+    const dir = join(tmpdir(), "gy_jsdesign_mcp_bridge");
     mkdirSync(dir, { recursive: true });
     const filePath = join(dir, `export-${Date.now()}.json`);
     writeFileSync(filePath, text, "utf8");
@@ -58,7 +58,7 @@ function errResult(err: unknown) {
 }
 
 function defaultAssetsDir(): string {
-  return join(tmpdir(), "jsdesign-mcp", "assets", String(Date.now()));
+  return join(tmpdir(), "gy_jsdesign_mcp_bridge", "assets", String(Date.now()));
 }
 
 function resolveOutputDir(outputDir?: string): string {
@@ -225,7 +225,7 @@ const exportCommonShape = {
     .string()
     .optional()
     .describe(
-      "切图输出目录（绝对路径或相对 cwd）。默认写入系统临时目录 jsdesign-mcp/assets/<ts>/",
+      "切图输出目录（绝对路径或相对 cwd）。默认写入系统临时目录 gy_jsdesign_mcp_bridge/assets/<ts>/",
     ),
   clientId: z.string().optional().describe("可选客户端 id"),
 };
@@ -242,7 +242,7 @@ export function registerTools(server: McpServer, bridge: BridgeLike): void {
         clients,
         hint:
           clients.length === 0
-            ? "请在即时设计中打开「JsDesign MCP Bridge」插件"
+            ? "请在即时设计中打开「GY Design MCP Bridge」插件"
             : "插件已连接，可调用 export_selection / export_assets / export_node",
       });
     },
@@ -398,7 +398,7 @@ export function registerTools(server: McpServer, bridge: BridgeLike): void {
         .string()
         .optional()
         .describe(
-          "输出目录。默认 %TEMP%/jsdesign-mcp/assets/<ts>/。写静态页时建议传项目 public/design-assets",
+          "输出目录。默认 %TEMP%/gy_jsdesign_mcp_bridge/assets/<ts>/。写静态页时建议传项目 public/design-assets",
         ),
       format: z
         .enum(["PNG", "JPG", "SVG"])
@@ -492,6 +492,182 @@ export function registerTools(server: McpServer, bridge: BridgeLike): void {
         }
         const { clientId, ...params } = args;
         const result = await bridge.call("get_node_css", params, { clientId });
+        return textResult(result);
+      } catch (e) {
+        return errResult(e);
+      }
+    },
+  );
+
+  // ——— Write/Create tools (fork addition) ———
+
+  const writeToolAnnotations = { destructiveHint: true } as const;
+
+  const nodeIdShape = {
+    parentId: z
+      .string()
+      .optional()
+      .describe("父节点 id；不传则挂到当前页（currentPage）顶层"),
+    clientId: z.string().optional().describe("可选客户端 id"),
+  };
+
+  const paintShape = z
+    .union([
+      z.string().describe('颜色字符串，如 "#ff0000"、"rgba(0,0,0,0.5)"'),
+      z.object({
+        r: z.number().describe("红 0-1 或 0-255"),
+        g: z.number(),
+        b: z.number(),
+      }),
+    ])
+    .optional();
+
+  server.tool(
+    "create_frame",
+    "在画布创建一个 Frame（可做容器）。可指定位置、尺寸、填充、圆角、auto-layout 等。默认 100×100，挂到当前页。",
+    {
+      name: z.string().optional().describe("节点名"),
+      x: z.number().optional().describe("相对父节点 x 坐标"),
+      y: z.number().optional().describe("相对父节点 y 坐标"),
+      width: z.number().optional().describe("宽度，默认 100"),
+      height: z.number().optional().describe("高度，默认 100"),
+      fills: paintShape.describe("背景填充颜色"),
+      strokes: paintShape.describe("描边颜色"),
+      strokeWeight: z.number().optional(),
+      cornerRadius: z.number().optional().describe("圆角半径"),
+      opacity: z.number().min(0).max(1).optional(),
+      rotation: z.number().optional(),
+      visible: z.boolean().optional(),
+      layoutMode: z
+        .enum(["NONE", "HORIZONTAL", "VERTICAL"])
+        .optional()
+        .describe("auto-layout 方向"),
+      itemSpacing: z.number().optional().describe("auto-layout 子项间距"),
+      paddingTop: z.number().optional(),
+      paddingRight: z.number().optional(),
+      paddingBottom: z.number().optional(),
+      paddingLeft: z.number().optional(),
+      primaryAxisAlignItems: z
+        .enum(["MIN", "CENTER", "MAX", "SPACE_BETWEEN"])
+        .optional(),
+      counterAxisAlignItems: z.enum(["MIN", "CENTER", "MAX"]).optional(),
+      ...nodeIdShape,
+    },
+    writeToolAnnotations,
+    async (args) => {
+      try {
+        const { clientId, ...params } = args;
+        const result = await bridge.call("create_frame", params, {
+          clientId,
+          timeoutMs: 30_000,
+        });
+        return textResult(result);
+      } catch (e) {
+        return errResult(e);
+      }
+    },
+  );
+
+  server.tool(
+    "create_rectangle",
+    "在画布创建一个矩形（色块/底色）。可指定位置、尺寸、填充、圆角等。默认 100×100。",
+    {
+      name: z.string().optional(),
+      x: z.number().optional(),
+      y: z.number().optional(),
+      width: z.number().optional(),
+      height: z.number().optional(),
+      fills: paintShape.describe("填充颜色"),
+      strokes: paintShape.describe("描边颜色"),
+      strokeWeight: z.number().optional(),
+      cornerRadius: z.number().optional(),
+      opacity: z.number().min(0).max(1).optional(),
+      rotation: z.number().optional(),
+      visible: z.boolean().optional(),
+      ...nodeIdShape,
+    },
+    writeToolAnnotations,
+    async (args) => {
+      try {
+        const { clientId, ...params } = args;
+        const result = await bridge.call("create_rectangle", params, {
+          clientId,
+          timeoutMs: 30_000,
+        });
+        return textResult(result);
+      } catch (e) {
+        return errResult(e);
+      }
+    },
+  );
+
+  server.tool(
+    "create_text",
+    "在画布创建一段文字。必须提供 text 参数。默认字体 Inter Regular；fontNode 可指定其他字体（需先 loadFontAsync）。",
+    {
+      text: z.string().describe("文字内容"),
+      name: z.string().optional(),
+      x: z.number().optional(),
+      y: z.number().optional(),
+      width: z.number().optional(),
+      height: z.number().optional(),
+      fontSize: z.number().positive().optional().describe("字号，默认由字体决定"),
+      fontName: z
+        .object({
+          family: z.string(),
+          style: z.string(),
+        })
+        .optional()
+        .describe('如 { family: "Inter", style: "Bold" }'),
+      color: paintShape.describe("文字颜色"),
+      textAlignHorizontal: z
+        .enum(["LEFT", "CENTER", "RIGHT", "JUSTIFIED"])
+        .optional(),
+      lineHeight: z
+        .union([z.object({ value: z.number(), unit: z.string() }), z.string()])
+        .optional(),
+      opacity: z.number().min(0).max(1).optional(),
+      rotation: z.number().optional(),
+      visible: z.boolean().optional(),
+      ...nodeIdShape,
+    },
+    writeToolAnnotations,
+    async (args) => {
+      try {
+        const { clientId, ...params } = args;
+        const result = await bridge.call("create_text", params, {
+          clientId,
+          timeoutMs: 60_000,
+        });
+        return textResult(result);
+      } catch (e) {
+        return errResult(e);
+      }
+    },
+  );
+
+  server.tool(
+    "create_from_json",
+    "按 JSON 节点树递归创建可编辑设计稿。每个节点 { type: FRAME|RECTANGLE|TEXT|ELLIPSE|LINE, name, x, y, width, height, fills, characters, fontSize, children: [...] }。用于把 HTML 解析结果或结构化设计数据一次性写入画布。",
+    {
+      nodes: z
+        .array(z.record(z.string(), z.unknown()))
+        .min(1)
+        .describe("节点规格数组，每项是一个 DesignNode-like 对象"),
+      parentId: z
+        .string()
+        .optional()
+        .describe("父节点 id；不传则挂到当前页顶层"),
+      clientId: z.string().optional(),
+    },
+    writeToolAnnotations,
+    async (args) => {
+      try {
+        const { clientId, ...params } = args;
+        const result = await bridge.call("create_from_json", params, {
+          clientId,
+          timeoutMs: 180_000,
+        });
         return textResult(result);
       } catch (e) {
         return errResult(e);

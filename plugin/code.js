@@ -1,6 +1,6 @@
 /**
- * JsDesign MCP Bridge — main thread (sandbox)
- * Serializes design nodes for Agent codegen. Read-only.
+ * GY Design MCP Bridge — main thread (sandbox)
+ * Fork of nothing-sy/js.design (MIT). Adds write/create methods.
  */
 
 /* global jsDesign */
@@ -60,6 +60,14 @@ async function handleMethod(method, params) {
       return getDesignTokens(params);
     case "get_node_css":
       return getNodeCss(params);
+    case "create_frame":
+      return createFrameNode(params);
+    case "create_rectangle":
+      return createRectangleNode(params);
+    case "create_text":
+      return createTextNode(params);
+    case "create_from_json":
+      return createFromJson(params);
     case "ping":
       return { pong: true, at: Date.now() };
     default:
@@ -794,6 +802,270 @@ function rgbaToHex(color, opacity) {
 function round(n, d) {
   const p = Math.pow(10, d);
   return Math.round(n * p) / p;
+}
+
+// ——— write/create methods (fork addition) ———
+
+/** Resolve a parent by id, fallback to currentPage. */
+function resolveParent(parentId) {
+  if (parentId) {
+    const parent = jsDesign.getNodeById(parentId);
+    if (!parent) throw new Error("未找到父节点 id=" + parentId);
+    if (!("appendChild" in parent)) {
+      throw new Error("父节点不支持 appendChild: " + parent.type + " (id=" + parentId + ")");
+    }
+    return parent;
+  }
+  return jsDesign.currentPage;
+}
+
+/** Convert "#rrggbb" / "#rgb" / "rgba(r,g,b,a)" / {r,g,b} (0-1) to RGB. */
+function parseColor(input) {
+  if (!input) return undefined;
+  if (typeof input === "object" && input !== null) {
+    return {
+      r: clamp01(input.r),
+      g: clamp01(input.g),
+      b: clamp01(input.b),
+    };
+  }
+  if (typeof input !== "string") return undefined;
+  const hexMatch = input.match(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/);
+  if (hexMatch) {
+    const hex = hexMatch[1];
+    let r, g, b;
+    if (hex.length === 3) {
+      r = parseInt(hex[0] + hex[0], 16);
+      g = parseInt(hex[1] + hex[1], 16);
+      b = parseInt(hex[2] + hex[2], 16);
+    } else {
+      r = parseInt(hex.slice(0, 2), 16);
+      g = parseInt(hex.slice(2, 4), 16);
+      b = parseInt(hex.slice(4, 6), 16);
+    }
+    return { r: r / 255, g: g / 255, b: b / 255 };
+  }
+  const rgbaMatch = input.match(/rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)(?:[,\s]+([\d.]+))?\s*\)/);
+  if (rgbaMatch) {
+    return {
+      r: parseInt(rgbaMatch[1], 10) / 255,
+      g: parseInt(rgbaMatch[2], 10) / 255,
+      b: parseInt(rgbaMatch[3], 10) / 255,
+    };
+  }
+  throw new Error("无法解析颜色: " + input);
+}
+
+function clamp01(n) {
+  if (typeof n !== "number") return 0;
+  if (n > 1) return n / 255;
+  return Math.max(0, Math.min(1, n));
+}
+
+/** Build a SOLID paint from a color + opacity. */
+function solidPaint(colorInput, opacity) {
+  const rgb = parseColor(colorInput);
+  if (!rgb) return undefined;
+  return [{ type: "SOLID", color: rgb, opacity: opacity !== undefined ? opacity : 1, visible: true }];
+}
+
+/** Apply common node properties (x/y/size/name/fills/strokes/corner/opacity). */
+function applyNodeProps(node, params) {
+  if (params.name) node.name = String(params.name);
+  if (typeof params.x === "number") node.x = params.x;
+  if (typeof params.y === "number") node.y = params.y;
+  const w = typeof params.width === "number" ? params.width : 100;
+  const h = typeof params.height === "number" ? params.height : 100;
+  if (typeof params.width === "number" || typeof params.height === "number") {
+    node.resize(w, h);
+  }
+  if (params.fills) {
+    if (Array.isArray(params.fills) && params.fills.length > 0 && params.fills[0] && typeof params.fills[0] === "object" && params.fills[0].type) {
+      node.fills = params.fills;
+    } else {
+      const paint = solidPaint(params.fills[0] || params.fills, params.fillOpacity);
+      if (paint) node.fills = paint;
+    }
+  }
+  if (params.strokes) {
+    const paint = solidPaint(Array.isArray(params.strokes) ? params.strokes[0] : params.strokes, params.strokeOpacity);
+    if (paint) node.strokes = paint;
+  }
+  if (typeof params.strokeWeight === "number") node.strokeWeight = params.strokeWeight;
+  if (typeof params.cornerRadius === "number") node.cornerRadius = params.cornerRadius;
+  if (typeof params.opacity === "number") node.opacity = params.opacity;
+  if (typeof params.rotation === "number") node.rotation = params.rotation;
+  if (typeof params.visible === "boolean") node.visible = params.visible;
+  if (typeof params.locked === "boolean") node.locked = params.locked;
+  // Auto-layout passthrough for frames
+  if (params.layoutMode) node.layoutMode = params.layoutMode;
+  if (typeof params.itemSpacing === "number") node.itemSpacing = params.itemSpacing;
+  if (typeof params.paddingTop === "number") node.paddingTop = params.paddingTop;
+  if (typeof params.paddingRight === "number") node.paddingRight = params.paddingRight;
+  if (typeof params.paddingBottom === "number") node.paddingBottom = params.paddingBottom;
+  if (typeof params.paddingLeft === "number") node.paddingLeft = params.paddingLeft;
+  if (params.primaryAxisAlignItems) node.primaryAxisAlignItems = params.primaryAxisAlignItems;
+  if (params.counterAxisAlignItems) node.counterAxisAlignItems = params.counterAxisAlignItems;
+  if (params.primaryAxisSizingMode) node.primaryAxisSizingMode = params.primaryAxisSizingMode;
+  if (params.counterAxisSizingMode) node.counterAxisSizingMode = params.counterAxisSizingMode;
+}
+
+/** Serialize a created node back to the caller (minimal, id/name/type/geom). */
+function serializeCreated(node) {
+  const out = {
+    id: node.id,
+    name: node.name,
+    type: node.type,
+    x: "x" in node ? node.x : undefined,
+    y: "y" in node ? node.y : undefined,
+    width: "width" in node ? node.width : undefined,
+    height: "height" in node ? node.height : undefined,
+  };
+  return out;
+}
+
+async function createFrameNode(params) {
+  const frame = jsDesign.createFrame();
+  applyNodeProps(frame, params);
+  const parent = resolveParent(params.parentId);
+  parent.appendChild(frame);
+  return serializeCreated(frame);
+}
+
+async function createRectangleNode(params) {
+  const rect = jsDesign.createRectangle();
+  applyNodeProps(rect, params);
+  const parent = resolveParent(params.parentId);
+  parent.appendChild(rect);
+  return serializeCreated(rect);
+}
+
+async function createTextNode(params) {
+  if (!params.text && params.text !== "") {
+    throw new Error("create_text 需要 text 参数");
+  }
+  const text = jsDesign.createText();
+  // load font before setting characters
+  const fontName = params.fontName || { family: "Inter", style: "Regular" };
+  try {
+    await jsDesign.loadFontAsync(fontName);
+    text.fontName = fontName;
+  } catch (e) {
+    // fallback: load the node's default font
+    try {
+      await jsDesign.loadFontAsync(text.fontName);
+    } catch (e2) {
+      throw new Error("加载字体失败: " + (e2 && e2.message ? e2.message : String(e2)));
+    }
+  }
+  text.characters = String(params.text);
+  if (typeof params.fontSize === "number") text.fontSize = params.fontSize;
+  if (params.color) {
+    const paint = solidPaint(params.color, 1);
+    if (paint) text.fills = paint;
+  }
+  if (typeof params.textAlignHorizontal === "string") text.textAlignHorizontal = params.textAlignHorizontal;
+  if (typeof params.lineHeight !== "undefined") text.lineHeight = params.lineHeight;
+  applyNodeProps(text, params); // x/y/width/height/name/opacity...
+  const parent = resolveParent(params.parentId);
+  parent.appendChild(text);
+  return serializeCreated(text);
+}
+
+/**
+ * Recursively create nodes from a JSON tree (the inverse of serializeNode).
+ * Accepts an array of DesignNode-like objects.
+ * Returns { created: [{id,name,type}], count, errors: [] }
+ */
+async function createFromJson(params) {
+  if (!Array.isArray(params.nodes)) {
+    throw new Error("create_from_json 需要 nodes 数组");
+  }
+  const parent = resolveParent(params.parentId);
+  const created = [];
+  const errors = [];
+  for (const spec of params.nodes) {
+    try {
+      const node = await createNodeRecursive(spec);
+      parent.appendChild(node);
+      created.push({ id: node.id, name: node.name, type: node.type });
+    } catch (e) {
+      errors.push({
+        name: spec && spec.name ? spec.name : "(unnamed)",
+        error: e && e.message ? e.message : String(e),
+      });
+    }
+  }
+  return {
+    source: "create_from_json",
+    documentName: jsDesign.root.name,
+    page: { id: jsDesign.currentPage.id, name: jsDesign.currentPage.name },
+    parentId: parent.id,
+    created,
+    count: created.length,
+    errors,
+  };
+}
+
+/** Map a serialized type to a jsDesign.createXxx() call. */
+async function createNodeRecursive(spec) {
+  if (!spec || typeof spec !== "object") throw new Error("节点规格无效");
+  const type = String(spec.type || "FRAME").toUpperCase();
+  let node;
+  switch (type) {
+    case "FRAME":
+      node = jsDesign.createFrame();
+      applyNodeProps(node, spec);
+      break;
+    case "RECTANGLE":
+      node = jsDesign.createRectangle();
+      applyNodeProps(node, spec);
+      break;
+    case "TEXT":
+      node = jsDesign.createText();
+      const fontName = spec.fontName || { family: "Inter", style: "Regular" };
+      try {
+        await jsDesign.loadFontAsync(fontName);
+        node.fontName = fontName;
+      } catch (e) {
+        await jsDesign.loadFontAsync(node.fontName);
+      }
+      node.characters = String(spec.characters || "");
+      if (typeof spec.fontSize === "number") node.fontSize = spec.fontSize;
+      if (Array.isArray(spec.fills) && spec.fills.length > 0 && spec.fills[0] && spec.fills[0].rgb) {
+        node.fills = [{ type: "SOLID", color: spec.fills[0].rgb, opacity: 1, visible: true }];
+      } else if (Array.isArray(spec.fills) && spec.fills.length > 0 && spec.fills[0] && typeof spec.fills[0].color === "string") {
+        const paint = solidPaint(spec.fills[0].color, 1);
+        if (paint) node.fills = paint;
+      }
+      applyNodeProps(node, spec); // x/y/width/height/name...
+      break;
+    case "ELLIPSE":
+      node = jsDesign.createEllipse();
+      applyNodeProps(node, spec);
+      break;
+    case "LINE":
+      node = jsDesign.createLine();
+      applyNodeProps(node, spec);
+      break;
+    default:
+      // Unknown type → fall back to a Frame as a container
+      node = jsDesign.createFrame();
+      node.name = String(spec.name || type);
+      applyNodeProps(node, spec);
+  }
+  // Recurse into children
+  if (Array.isArray(spec.children) && "appendChild" in node) {
+    for (const childSpec of spec.children) {
+      try {
+        const child = await createNodeRecursive(childSpec);
+        node.appendChild(child);
+      } catch (e) {
+        // skip failed child but continue
+      }
+    }
+  }
+  return node;
 }
 
 // ——— tokens ———

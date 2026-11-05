@@ -21,7 +21,7 @@ const idleMs = Number(
 const selfPath = fileURLToPath(import.meta.url);
 
 function daemonDir(): string {
-  return join(tmpdir(), "jsdesign-mcp");
+  return join(tmpdir(), "gy_jsdesign_mcp_bridge");
 }
 
 function pidPath(): string {
@@ -55,7 +55,7 @@ function formatIdleDuration(ms: number): string {
 async function runDaemon(): Promise<void> {
   if (await probeDaemon(port, 1500)) {
     console.error(
-      `[jsdesign-mcp] daemon already running on ws://127.0.0.1:${port} — exiting`,
+      `[gy_jsdesign_mcp_bridge] daemon already running on ws://127.0.0.1:${port} — exiting`,
     );
     process.exit(0);
   }
@@ -73,7 +73,7 @@ async function runDaemon(): Promise<void> {
   const shutdown = (reason?: string) => {
     clearIdleTimer();
     if (reason) {
-      console.error(`[jsdesign-mcp] ${reason}`);
+      console.error(`[gy_jsdesign_mcp_bridge] ${reason}`);
     }
     clearPid();
     bridge.stop();
@@ -96,12 +96,12 @@ async function runDaemon(): Promise<void> {
     const listenPort = await bridge.start();
     writePid();
     console.error(
-      `[jsdesign-mcp] daemon WebSocket on ws://127.0.0.1:${listenPort}`,
+      `[gy_jsdesign_mcp_bridge] daemon WebSocket on ws://127.0.0.1:${listenPort}`,
     );
-    console.error("[jsdesign-mcp] Waiting for Instant Design plugin / MCP agents…");
+    console.error("[gy_jsdesign_mcp_bridge] Waiting for Instant Design plugin / MCP agents…");
     if (idleMs > 0) {
       console.error(
-        `[jsdesign-mcp] will exit after ${formatIdleDuration(idleMs)} with no clients`,
+        `[gy_jsdesign_mcp_bridge] will exit after ${formatIdleDuration(idleMs)} with no clients`,
       );
     }
 
@@ -116,7 +116,7 @@ async function runDaemon(): Promise<void> {
   } catch (err) {
     if (await probeDaemon(port, 1500)) {
       console.error(
-        `[jsdesign-mcp] daemon already running on ws://127.0.0.1:${port} — exiting`,
+        `[gy_jsdesign_mcp_bridge] daemon already running on ws://127.0.0.1:${port} — exiting`,
       );
       process.exit(0);
     }
@@ -136,7 +136,7 @@ function spawnDaemonDetached(): void {
   });
   child.unref();
   console.error(
-    `[jsdesign-mcp] spawned daemon (pid ${child.pid ?? "?"}) on port ${port}`,
+    `[gy_jsdesign_mcp_bridge] spawned daemon (pid ${child.pid ?? "?"}) on port ${port}`,
   );
 }
 
@@ -171,19 +171,19 @@ async function connectWithAutoStart(): Promise<AgentClient> {
   }
 
   throw new Error(
-    `无法连接或启动 jsdesign-mcp daemon（ws://127.0.0.1:${port}）。请手动运行: jsdesign-mcp daemon`,
+    `无法连接或启动 gy_jsdesign_mcp_bridge daemon（ws://127.0.0.1:${port}）。请手动运行: gy_jsdesign_mcp_bridge daemon`,
   );
 }
 
 async function runMcp(): Promise<void> {
   const client = await connectWithAutoStart();
   console.error(
-    `[jsdesign-mcp] attached to daemon at ws://127.0.0.1:${port}`,
+    `[gy_jsdesign_mcp_bridge] attached to daemon at ws://127.0.0.1:${port}`,
   );
 
   const server = new McpServer({
-    name: "jsdesign-mcp",
-    version: "2.0.0",
+    name: "gy_jsdesign_mcp_bridge",
+    version: "2.1.0",
   });
 
   registerTools(server, client);
@@ -209,6 +209,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((err) => {
-  console.error("[jsdesign-mcp] fatal:", err);
+  console.error("[gy_jsdesign_mcp_bridge] fatal:", err);
   process.exit(1);
 });

@@ -144,7 +144,7 @@ export class AgentClient implements BridgeLike {
   ): Promise<unknown> {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
       throw new Error(
-        "未连接到 jsdesign-mcp daemon。请确认守护进程已在固定端口运行。",
+        "未连接到 gy_jsdesign_mcp_bridge daemon。请确认守护进程已在固定端口运行。",
       );
     }
 

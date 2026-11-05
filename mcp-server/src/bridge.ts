@@ -75,7 +75,7 @@ export class Bridge implements BridgeLike {
         if (err.code === "EADDRINUSE") {
           reject(
             new Error(
-              `端口 ${this.port} 已被占用。若已是 jsdesign-mcp daemon 可忽略；否则结束占用进程或设置 JSDESIGN_MCP_PORT。`,
+              `端口 ${this.port} 已被占用。若已是 gy_jsdesign_mcp_bridge daemon 可忽略；否则结束占用进程或设置 JSDESIGN_MCP_PORT。`,
             ),
           );
           return;
@@ -170,7 +170,7 @@ export class Bridge implements BridgeLike {
     const client = this.getPrimaryPlugin(options.clientId);
     if (!client) {
       throw new Error(
-        "即时设计插件未连接。请在即时设计中打开「JsDesign MCP Bridge」插件，并确认状态为「已连接」。",
+        "即时设计插件未连接。请在即时设计中打开「GY Design MCP Bridge」插件，并确认状态为「已连接」。",
       );
     }
 

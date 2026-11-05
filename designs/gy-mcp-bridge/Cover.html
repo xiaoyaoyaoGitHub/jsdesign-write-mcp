@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<title>GY Design MCP Bridge — Cover 1920×1080</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    width: 1920px; height: 1080px;
+    background: #0a0b0f;
+    overflow: hidden;
+  }
+  .cover {
+    position: relative;
+    width: 1920px; height: 1080px;
+    background:
+      radial-gradient(1500px 950px at 84% 45%, rgba(91,140,255,0.28), rgba(91,140,255,0) 64%),
+      radial-gradient(1200px 720px at 2% 102%, rgba(62,207,142,0.14), rgba(62,207,142,0) 62%),
+      linear-gradient(158deg, #171922 0%, #0a0b0f 56%, #07080b 100%);
+    font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Hiragino Sans GB", "Helvetica Neue", Arial, sans-serif;
+    color: #f4f5f7;
+    overflow: hidden;
+  }
+  /* 细网格：只做质感 */
+  .grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.028) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.028) 1px, transparent 1px);
+    background-size: 64px 64px;
+    -webkit-mask-image: radial-gradient(1300px 760px at 64% 48%, #000 0%, transparent 76%);
+    mask-image: radial-gradient(1300px 760px at 64% 48%, #000 0%, transparent 76%);
+  }
+  /* 斜向光带：拉开纵深 */
+  .ray {
+    position: absolute; top: -260px; right: 90px;
+    width: 1000px; height: 1520px;
+    background: linear-gradient(104deg, rgba(91,140,255,0) 38%, rgba(91,140,255,0.11) 50%, rgba(91,140,255,0) 62%);
+    transform: rotate(6deg);
+  }
+  .sheen {
+    position: absolute; top: 0; left: 0; right: 0; height: 400px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0));
+  }
+  .inner {
+    position: relative;
+    height: 100%;
+    padding: 0 120px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  /* ——— 左侧文案 ——— */
+  .copy { width: 1010px; }
+  .eyebrow {
+    display: flex; align-items: center; gap: 16px;
+    font-size: 19px;
+    letter-spacing: 0.22em;
+    color: #6b7180;
+    font-weight: 600;
+    margin-bottom: 38px;
+  }
+  .eyebrow::before {
+    content: ""; width: 34px; height: 2px;
+    background: rgba(91,140,255,0.9);
+  }
+  h1 {
+    margin: 0;
+    font-size: 104px;
+    line-height: 1.04;
+    font-weight: 640;
+    letter-spacing: -0.026em;
+    color: #f7f8fa;
+  }
+  h1 .accent {
+    background: linear-gradient(94deg, #5b8cff 0%, #7ea6ff 42%, #3ecf8e 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .tagline {
+    margin: 44px 0 0;
+    font-size: 27px;
+    line-height: 1.72;
+    color: #99a0ad;
+    max-width: 900px;
+  }
+  .tagline b { color: #ccd2dc; font-weight: 600; }
+  .chips { display: flex; gap: 16px; margin-top: 54px; }
+  .chip {
+    font-size: 20px;
+    line-height: 1;
+    padding: 15px 24px;
+    border-radius: 999px;
+    color: #b9bec9;
+    background: rgba(255,255,255,0.035);
+    border: 1px solid rgba(255,255,255,0.10);
+    white-space: nowrap;
+  }
+
+  /* ——— 右侧图标 + 状态卡 ——— */
+  .art {
+    position: relative;
+    width: 640px; height: 700px;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .art .halo {
+    position: absolute; width: 760px; height: 760px;
+    left: 50%; top: 50%; transform: translate(-50%,-50%);
+    background: radial-gradient(closest-side, rgba(91,140,255,0.30), rgba(91,140,255,0) 70%);
+  }
+  .art img.tile {
+    position: relative;
+    width: 460px; height: 460px;
+    filter: drop-shadow(0 44px 84px rgba(0,0,0,0.68));
+  }
+  .statusCard {
+    position: absolute;
+    right: 0; bottom: 46px;
+    display: flex; align-items: center; gap: 16px;
+    padding: 18px 24px;
+    border-radius: 18px;
+    background: rgba(22,24,30,0.92);
+    border: 1px solid rgba(255,255,255,0.10);
+    box-shadow: 0 26px 60px rgba(0,0,0,0.58);
+    white-space: nowrap;
+  }
+  .statusCard .led {
+    width: 12px; height: 12px; border-radius: 50%;
+    background: #3ecf8e;
+    box-shadow: 0 0 0 6px rgba(62,207,142,0.14);
+  }
+  .statusCard .label { font-size: 20px; color: #e8eaee; font-weight: 600; }
+  .statusCard .url {
+    font-size: 18px; color: #6f7684;
+    font-family: "SF Mono", ui-monospace, Menlo, monospace;
+  }
+
+  /* ——— 底部注脚 ——— */
+  .foot {
+    position: absolute;
+    left: 120px; bottom: 66px;
+    display: flex; align-items: center; gap: 14px;
+    font-size: 19px; color: #5e636d;
+  }
+  .foot .dot {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: #3ecf8e;
+    box-shadow: 0 0 0 5px rgba(62,207,142,0.14);
+  }
+</style>
+</head>
+<body>
+  <div class="cover">
+    <div class="grid"></div>
+    <div class="ray"></div>
+    <div class="sheen"></div>
+
+    <div class="inner">
+      <div class="copy">
+        <div class="eyebrow">即时设计 · MCP</div>
+        <h1>GY Design<br /><span class="accent">MCP Bridge</span></h1>
+        <p class="tagline">
+          把设计画布接进 AI：选中的画板导出为<b>结构化节点与切图</b>，<br />
+          AI 生成的页面写回画布，成为<b>可继续编辑的图层</b>。
+        </p>
+        <div class="chips">
+          <span class="chip">导出设计稿</span>
+          <span class="chip">写回画布</span>
+          <span class="chip">本机通信</span>
+        </div>
+      </div>
+
+      <div class="art">
+        <div class="halo"></div>
+        <img class="tile" src="exports/icon-512.png" alt="GY Design MCP Bridge" />
+        <div class="statusCard">
+          <span class="led"></span>
+          <span class="label">已连接</span>
+          <span class="url">ws://127.0.0.1:3847</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="foot"><span class="dot"></span>本地运行 · 设计稿不出本机</div>
+  </div>
+</body>
+</html>
