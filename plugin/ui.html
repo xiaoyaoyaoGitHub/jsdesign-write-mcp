@@ -91,12 +91,15 @@
     <span class="dot" id="dot"></span>
     <span class="status" id="status">未连接</span>
   </div>
-  <label for="url">MCP WebSocket</label>
+  <label for="url">MCP 桥接地址（WebSocket）</label>
   <input id="url" value="ws://127.0.0.1:3847" />
   <button id="reconnect" type="button">重新连接</button>
   <p class="hint">
-    在 Cursor 中配置并启动 MCP 后，此处应显示「已连接」。<br />
-    推荐：选中目标画板 → Agent 调用 <code>export_selection</code>（可选 <code>includeAssets</code>）或 <code>export_assets</code> 写页面。
+    配好 MCP（Cursor / ZCode 等）并启动后，这里应显示「已连接」。<br />
+    读：<code>export_selection</code>、<code>export_assets</code>、<code>get_design_tokens</code><br />
+    写：<code>create_frame</code>、<code>create_text</code>、<code>create_from_json</code><br />
+    多数工具需先取 <code>clientId</code>（<code>get_connection_status</code>）<br />
+    地址不一致时改上面的输入框，再点「重新连接」。
   </p>
 
   <script>
