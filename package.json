@@ -4,7 +4,8 @@
   "private": true,
   "description": "即时设计 MCP 桥接：插件负责画布读写，本服务负责把 MCP 调用转发给插件",
   "bin": {
-    "gy_jsdesign_mcp_bridge": "mcp-server/dist/index.js"
+    "gy_jsdesign_mcp_bridge": "mcp-server/dist/index.js",
+    "jsdesign-write-mcp": "mcp-server/dist/index.js"
   },
   "engines": {
     "node": ">=18"
