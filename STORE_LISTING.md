@@ -84,11 +84,19 @@
 
 ### 第 1 步：安装 MCP 服务
 
+**方式 A：npx 直接运行（推荐，免安装）**
+
 ```bash
-npm i -g gy_jsdesign_mcp_bridge
+npx github:xiaoyaoyaoGitHub/jsdesign-write-mcp daemon
 ```
 
-安装完成后应可直接使用命令 `gy_jsdesign_mcp_bridge`。若使用仓库源码版本，则指向其构建产物 `mcp-server/dist/index.js` 即可。
+**方式 B：全局安装**
+
+```bash
+npm i -g github:xiaoyaoyaoGitHub/jsdesign-write-mcp
+```
+
+安装完成后可直接使用命令 `gy_jsdesign_mcp_bridge`。仓库内已包含构建产物 `mcp-server/dist/`，从 git 安装不需要再编译。
 
 ### 第 2 步：在 AI 客户端里配置 MCP
 
@@ -97,12 +105,15 @@ npm i -g gy_jsdesign_mcp_bridge
 ```json
 {
   "mcpServers": {
-    "gy_jsdesign_mcp_bridge": {
-      "command": "gy_jsdesign_mcp_bridge"
+    "jsdesign": {
+      "command": "npx",
+      "args": ["github:xiaoyaoyaoGitHub/jsdesign-write-mcp"]
     }
   }
 }
 ```
+
+已全局安装的话，`command` 换成 `gy_jsdesign_mcp_bridge` 并去掉 `args`，启动更快。
 
 保存后在 **Cursor → Settings → MCP** 里确认 `jsdesign` 为**绿灯**。首次启用会自动拉起本机桥接服务。
 
@@ -112,6 +123,7 @@ npm i -g gy_jsdesign_mcp_bridge
 
 ```bash
 gy_jsdesign_mcp_bridge daemon
+# 或未全局安装时：npx github:xiaoyaoyaoGitHub/jsdesign-write-mcp daemon
 ```
 
 - 改端口：设置环境变量 `JSDESIGN_MCP_PORT`（例如 `3848`），并把插件面板里的地址同步改掉

@@ -36,9 +36,17 @@ fork 主要改动 **插件端 `plugin/code.js`** 与 **server 端 `mcp-server/sr
 
 ## 快速开始
 
-### 1. 本地使用（已 fork 到 `~/Documents/项目/jsdesign-write-mcp/`）
+### 0. 最省事：直接跑仓库（免编译，dist 已入库）
 
-无需 npm 发布，直接指向本地编译产物。编辑 ZCode 用户级 MCP 配置 `~/.zcode/cli/config.json`：
+```bash
+npx github:xiaoyaoyaoGitHub/jsdesign-write-mcp daemon
+```
+
+MCP 客户端配置：`{"command":"npx","args":["github:xiaoyaoyaoGitHub/jsdesign-write-mcp"]}`
+
+### 1. 本地开发（仓库已在 `~/Documents/项目/jsdesign-write-mcp/`）
+
+直接指向本地构建产物。编辑 ZCode 用户级 MCP 配置 `~/.zcode/cli/config.json`：
 
 ```json
 {
@@ -68,13 +76,17 @@ Cursor / Claude Desktop 同理，改各自的 `mcp.json` 路径即可。
 
 > 注意：fork 版插件的 `id` 已改为 `wly_jsdesign_write_2026`，与原版 `JsDesign MCP Bridge` 不冲突，两者可共存。但同一时间只能运行一个连 3847 端口的插件——建议在插件管理里禁用原版，只保留 fork 版。
 
-### 3. 构建（改了 `tools.ts` 或 `code.js` 后需要重新构建 server）
+### 3. 构建（只在改了 `mcp-server/src/` 时需要）
 
 ```bash
 cd /Users/wangly/Documents/项目/jsdesign-write-mcp/mcp-server
 npm install
 npm run build   # tsc → dist/
 ```
+
+> `dist/` 已提交进仓库（从 git / npx 安装无需编译）。**改了源码务必重新 build 并提交 dist**，否则用户拿到的仍是旧产物。
+>
+> 若 `npm install` 报 `Failed to replace env in config: ${NPM_TOKEN}`，说明本地残留了带 `${NPM_TOKEN}` 的 `.npmrc`；该文件已从仓库移除，删掉本地 `.npmrc` 或导出 `NPM_TOKEN` 即可。
 
 插件端 `plugin/code.js` 是纯 JS，改完直接在即时设计里重新运行插件即可生效，无需构建。
 

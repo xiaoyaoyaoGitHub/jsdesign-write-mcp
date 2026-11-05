@@ -2,7 +2,7 @@
 
 即时设计 MCP：导出设计稿节点树，供 Cursor Agent 写页面（只读，不写回画布）。
 
-- 仓库：https://github.com/nothing-sy/js.design
+- 仓库：https://github.com/xiaoyaoyaoGitHub/jsdesign-write-mcp（fork 自 [nothing-sy/js.design](https://github.com/nothing-sy/js.design)）
 - npm：上游只读版 [`jsdesign-mcp-server@2.0.0`](https://www.npmjs.com/package/jsdesign-mcp-server)
 - 插件版本：`2.2.0`（见 [`plugin/manifest.json`](plugin/manifest.json) / 面板右上角）· 服务端包名：`gy_jsdesign_mcp_bridge`（本仓库 fork 版，尚未发布到 npm）
 - 版本日志：[mcp-server/CHANGELOG.md](mcp-server/CHANGELOG.md)
@@ -32,19 +32,27 @@ Cursor MCP stdio ──agent 接入──► 同上 daemon（Cursor 启停不立
 
 ---
 
-## 1. 安装包
+## 1. 安装 MCP 服务
+
+**方式 A：npx 直接运行（推荐，免安装、免构建）**
 
 ```bash
-npm i -g jsdesign-mcp-server@2.0.0
+npx github:xiaoyaoyaoGitHub/jsdesign-write-mcp daemon
+```
+
+**方式 B：全局安装**
+
+```bash
+npm i -g github:xiaoyaoyaoGitHub/jsdesign-write-mcp
 ```
 
 安装后可直接使用命令：
 
 ```bash
-jsdesign-mcp
+gy_jsdesign_mcp_bridge daemon
 ```
 
-> npm 包名是 **`jsdesign-mcp-server`**；CLI 命令名是 **`jsdesign-mcp`**，不要混用。
+> CLI 命令名是 **`gy_jsdesign_mcp_bridge`**。仓库里已包含构建产物 `mcp-server/dist/`，所以从 git 安装无需再编译；改了 `mcp-server/src/` 之后才需要 `npm run build` 并提交 dist。
 
 ---
 
@@ -65,7 +73,8 @@ jsdesign-mcp
 {
   "mcpServers": {
     "jsdesign": {
-      "command": "jsdesign-mcp"
+      "command": "npx",
+      "args": ["github:xiaoyaoyaoGitHub/jsdesign-write-mcp"]
     }
   }
 }
@@ -77,7 +86,8 @@ jsdesign-mcp
 {
   "mcpServers": {
     "jsdesign": {
-      "command": "jsdesign-mcp",
+      "command": "npx",
+      "args": ["github:xiaoyaoyaoGitHub/jsdesign-write-mcp"],
       "env": {
         "JSDESIGN_MCP_PORT": "3848"
       }
@@ -86,11 +96,13 @@ jsdesign-mcp
 }
 ```
 
+> 已全局安装的话，把 `command` 换成 `gy_jsdesign_mcp_bridge`、去掉 `args` 即可，启动更快（npx 每次会重新解析 git 包）。
+
 ### 2.3 确认 MCP 已启动
 
 1. 打开 Cursor → **Settings → MCP**
 2. 找到 **jsdesign**，状态应为**绿灯**
-3. 若为红灯：检查 `mcp.json` 语法，以及全局命令 `jsdesign-mcp` 是否可用
+3. 若为红灯：检查 `mcp.json` 语法，以及 `gy_jsdesign_mcp_bridge` 是否可用（或 npx 能否拉到该仓库）
 
 默认 WebSocket：`ws://127.0.0.1:3847`，由 **daemon 占用**（与 Cursor MCP stdio 进程分离）。  
 首次启用 MCP 时会自动 `spawn` daemon；关闭 Cursor / 重启 MCP **不会立刻**关掉 3847，即时设计插件可继续连着。  
@@ -99,7 +111,7 @@ jsdesign-mcp
 可选：登录后手动预热：
 
 ```bash
-jsdesign-mcp daemon
+gy_jsdesign_mcp_bridge daemon
 ```
 
 ---
@@ -119,7 +131,7 @@ MCP 绿灯后，再在即时设计里装插件并连上 WebSocket。
 
 **方式 B：开发者导入**
 
-1. 克隆仓库：`git clone https://github.com/nothing-sy/js.design.git`
+1. 克隆仓库：`git clone https://github.com/xiaoyaoyaoGitHub/jsdesign-write-mcp.git`
 2. 即时设计 → **插件 → 开发者 → 导入插件**
 3. 选择仓库里的 [`plugin/manifest.json`](plugin/manifest.json)
 4. 运行插件
@@ -196,12 +208,12 @@ MCP 绿灯后，再在即时设计里装插件并连上 WebSocket。
 
 | 现象 | 处理 |
 |------|------|
-| MCP 红灯 | 检查 `mcp.json`；确认已全局安装且 `jsdesign-mcp` 可用 |
-| 插件未连接 | 确认 daemon 在 `3847`（`jsdesign-mcp daemon`）；再点插件「重新连接」；保持面板打开 |
+| MCP 红灯 | 检查 `mcp.json`；确认 `gy_jsdesign_mcp_bridge` 可用，或 npx 能拉到仓库 |
+| 插件未连接 | 确认 daemon 在 `3847`（`gy_jsdesign_mcp_bridge daemon`）；再点插件「重新连接」；保持面板打开 |
 | 无选中节点 | 先在画布选中目标 Frame |
 | 端口占用（非本 daemon） | 结束占用进程，或设 `JSDESIGN_MCP_PORT` 换端口，并同步改插件面板里的地址 |
-| 旧版 MCP 占着 3847 | 结束旧 `node`/`jsdesign-mcp` 进程后执行 `jsdesign-mcp daemon` |
-| 命令找不到 | 确认已执行 `npm i -g jsdesign-mcp-server@2.0.0`，命令名为 `jsdesign-mcp` |
+| 旧版 MCP 占着 3847 | 结束旧 `node` 进程后执行 `gy_jsdesign_mcp_bridge daemon` |
+| 命令找不到 | 用 `npx github:xiaoyaoyaoGitHub/jsdesign-write-mcp`，或 `npm i -g github:xiaoyaoyaoGitHub/jsdesign-write-mcp` |
 
 ---
 
