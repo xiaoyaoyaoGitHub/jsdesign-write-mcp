@@ -13,8 +13,8 @@ const DEFAULTS = {
   exportScale: 2,
 };
 
-// 面板高度按内容实测设定（320px 宽下内容约 302px），避免提示文字被裁切
-jsDesign.showUI(__html__, { width: 320, height: 340 });
+// 面板尺寸沿用历史值：320x220 是唯一验证过能正常出面板的尺寸
+jsDesign.showUI(__html__, { width: 320, height: 220 });
 
 jsDesign.ui.onmessage = async (msg) => {
   if (!msg || typeof msg !== "object") return;
