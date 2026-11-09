@@ -4,7 +4,7 @@
 
 - 仓库：https://github.com/xiaoyaoyaoGitHub/jsdesign-write-mcp（fork 自 [nothing-sy/js.design](https://github.com/nothing-sy/js.design)）
 - npm：上游只读版 [`jsdesign-mcp-server@2.0.0`](https://www.npmjs.com/package/jsdesign-mcp-server)
-- 插件版本：`2.2.0`（见 [`plugin/manifest.json`](plugin/manifest.json) / 面板右上角）· 服务端包名：`gy_jsdesign_mcp_bridge`（本仓库 fork 版，尚未发布到 npm）
+- 插件版本：`2.2.0`（见 [`plugin/manifest.json`](plugin/manifest.json) / 面板右上角）· 服务端包名：[`gy_jsdesign_mcp_bridge@2.2.0`](https://www.npmjs.com/package/gy_jsdesign_mcp_bridge)（本仓库 fork 版，已发布到 npm）
 - 版本日志：[mcp-server/CHANGELOG.md](mcp-server/CHANGELOG.md)
 
 **环境要求**：Node.js 18+ · [即时设计桌面端](https://js.design/download) · [Cursor](https://cursor.com)
@@ -46,10 +46,12 @@ npx "github:xiaoyaoyaoGitHub/jsdesign-write-mcp#v2.2.0" daemon
 **方式 B：全局安装（推荐，装一次，之后秒开）**
 
 ```bash
-npm i -g "github:xiaoyaoyaoGitHub/jsdesign-write-mcp#v2.2.0"
+npm i -g gy_jsdesign_mcp_bridge@2.2.0
 ```
 
-> 结尾的 `#v2.2.0` 是**版本锁定**：不写它会跟随 `main` 最新提交，仓库一推新代码你这边就跟着变。升级时把 `v2.2.0` 换成新 tag 即可。
+> 2026-11-09 起发布到 npm，从 registry 安装不依赖 GitHub 访问。也可以继续走 git：
+> `npm i -g "github:xiaoyaoyaoGitHub/jsdesign-write-mcp#v2.2.0"`（内容相同；结尾 `#v2.2.0` 是
+> **版本锁定**，不写会跟随 `main` 最新提交。升级时换成新 tag 即可）
 
 安装后可直接使用命令：
 
