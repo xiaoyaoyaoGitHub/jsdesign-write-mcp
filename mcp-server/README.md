@@ -36,17 +36,16 @@ fork 主要改动 **插件端 `plugin/code.js`** 与 **server 端 `mcp-server/sr
 
 ## 快速开始
 
-### 0. 最省事：直接跑仓库（免编译，dist 已入库）
+### 0. 最省事：npx / 全局安装（已发布到 npm）
 
 ```bash
-npx "github:xiaoyaoyaoGitHub/jsdesign-write-mcp#v2.2.0" daemon
+npx gy_jsdesign_mcp_bridge daemon          # 免安装，首次需下载，之后走本地缓存
+npm i -g gy_jsdesign_mcp_bridge            # 或全局装一次，之后秒开
 ```
 
-MCP 客户端配置：`{"command":"npx","args":["github:xiaoyaoyaoGitHub/jsdesign-write-mcp#v2.2.0"]}`
+MCP 客户端配置：`{"command":"npx","args":["gy_jsdesign_mcp_bridge"]}`（全局安装后 `command` 直接写 `gy_jsdesign_mcp_bridge`、去掉 `args`）
 
-> `#v2.2.0` 锁定版本；去掉则跟随仓库最新提交。
-> npx 方式每次启动都要重新拉包（实测约 20–40 秒）。想秒开就先全局安装：
-> `npm i -g "github:xiaoyaoyaoGitHub/jsdesign-write-mcp#v2.2.0"`，再把 `command` 换成 `gy_jsdesign_mcp_bridge`、去掉 `args`。
+> 备选（不想走 npm registry 时）：`npx "github:xiaoyaoyaoGitHub/jsdesign-write-mcp#v2.2.0" daemon`，`#v2.2.0` 锁定版本，去掉则跟随仓库最新提交。
 
 ### 1. 本地开发（仓库已在 `~/Documents/项目/jsdesign-write-mcp/`）
 

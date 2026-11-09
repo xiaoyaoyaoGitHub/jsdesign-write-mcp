@@ -84,22 +84,21 @@
 
 ### 第 1 步：安装 MCP 服务
 
-**方式 A：npx 直接运行（免安装，但每次启动需重新拉包，约 20–40 秒）**
+**方式 A：npx 直接运行（免安装，首次需下载，之后走本地缓存）**
 
 ```bash
-npx "github:xiaoyaoyaoGitHub/jsdesign-write-mcp#v2.2.0" daemon
+npx gy_jsdesign_mcp_bridge daemon
 ```
 
 **方式 B：全局安装（推荐：装一次，之后启动秒开）**
 
 ```bash
-npm i -g "github:xiaoyaoyaoGitHub/jsdesign-write-mcp#v2.2.0"
+npm i -g gy_jsdesign_mcp_bridge
 ```
 
-安装完成后可直接使用命令 `gy_jsdesign_mcp_bridge`。仓库内已包含构建产物 `mcp-server/dist/`，从 git 安装不需要再编译。
+安装完成后可直接使用命令 `gy_jsdesign_mcp_bridge`。备选：从 GitHub 直装 `npm i -g "github:xiaoyaoyaoGitHub/jsdesign-write-mcp#v2.2.0"`（内容相同，`#v2.2.0` 锁定版本）。
 
-> `#v2.2.0` 是版本锁定：保证你装到的就是这一版；不写则跟随仓库最新提交。
-> 用方式 A 时，每次打开 AI 客户端都要等 20–40 秒拉包，期间 MCP 可能先显示红灯，属正常现象。
+> 用方式 A 时，首次启动要下载包，期间 MCP 可能先显示红灯，属正常现象，之后有缓存会变快。
 
 ### 第 2 步：在 AI 客户端里配置 MCP
 
@@ -110,7 +109,7 @@ npm i -g "github:xiaoyaoyaoGitHub/jsdesign-write-mcp#v2.2.0"
   "mcpServers": {
     "jsdesign": {
       "command": "npx",
-      "args": ["github:xiaoyaoyaoGitHub/jsdesign-write-mcp#v2.2.0"]
+      "args": ["gy_jsdesign_mcp_bridge"]
     }
   }
 }
@@ -126,7 +125,7 @@ npm i -g "github:xiaoyaoyaoGitHub/jsdesign-write-mcp#v2.2.0"
 
 ```bash
 gy_jsdesign_mcp_bridge daemon
-# 未全局安装时：npx "github:xiaoyaoyaoGitHub/jsdesign-write-mcp#v2.2.0" daemon
+# 未全局安装时：npx gy_jsdesign_mcp_bridge daemon
 ```
 
 > 一般无需手动执行：AI 客户端启用 MCP 时会自动拉起 daemon。

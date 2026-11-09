@@ -8,7 +8,7 @@
 - 版本日志：[mcp-server/CHANGELOG.md](mcp-server/CHANGELOG.md)
 
 **环境要求**：Node.js 18+ · [即时设计桌面端](https://js.design/download) · [Cursor](https://cursor.com)
-· git（仅「`npx github:` 免安装」方式需要，且需能访问 GitHub；已全局安装则不需要）
+· git（仅备选的「GitHub 直装」方式需要；npm 安装与 npx 都不需要）
 
 ---
 
@@ -35,13 +35,13 @@ Cursor MCP stdio ──agent 接入──► 同上 daemon（Cursor 启停不立
 
 ## 1. 安装 MCP 服务
 
-**方式 A：npx 直接运行（免安装，但每次启动都要重新拉包，约 20–40 秒）**
+**方式 A：npx 直接运行（免安装，首次需下载，之后走本地缓存）**
 
 ```bash
-npx "github:xiaoyaoyaoGitHub/jsdesign-write-mcp#v2.2.0" daemon
+npx gy_jsdesign_mcp_bridge daemon
 ```
 
-> 用 npx 时每次打开 Cursor 都要等这段时间，客户端可能先显示红灯，稍等会转绿。嫌慢就用方式 B。
+> 首次启动要下载包，Cursor 可能先显示红灯，稍等会转绿；之后 npx 有本地缓存，启动明显变快。求稳就用方式 B。
 
 **方式 B：全局安装（推荐，装一次，之后秒开）**
 
@@ -81,7 +81,7 @@ gy_jsdesign_mcp_bridge daemon
   "mcpServers": {
     "jsdesign": {
       "command": "npx",
-      "args": ["github:xiaoyaoyaoGitHub/jsdesign-write-mcp#v2.2.0"]
+      "args": ["gy_jsdesign_mcp_bridge"]
     }
   }
 }
@@ -94,7 +94,7 @@ gy_jsdesign_mcp_bridge daemon
   "mcpServers": {
     "jsdesign": {
       "command": "npx",
-      "args": ["github:xiaoyaoyaoGitHub/jsdesign-write-mcp#v2.2.0"],
+      "args": ["gy_jsdesign_mcp_bridge"],
       "env": {
         "JSDESIGN_MCP_PORT": "3848"
       }
@@ -103,13 +103,13 @@ gy_jsdesign_mcp_bridge daemon
 }
 ```
 
-> 已全局安装的话，把 `command` 换成 `gy_jsdesign_mcp_bridge`、去掉 `args` 即可，启动更快（npx 每次会重新解析 git 包）。
+> 已全局安装的话，把 `command` 换成 `gy_jsdesign_mcp_bridge`、去掉 `args` 即可，启动更快（npx 每次要先解析包名）。
 
 ### 2.3 确认 MCP 已启动
 
 1. 打开 Cursor → **Settings → MCP**
 2. 找到 **jsdesign**，状态应为**绿灯**
-3. 若为红灯：检查 `mcp.json` 语法，以及 `gy_jsdesign_mcp_bridge` 是否可用（或 npx 能否拉到该仓库）
+3. 若为红灯：检查 `mcp.json` 语法，以及 `gy_jsdesign_mcp_bridge` 是否可用（或 npx 能否拉到该包）
 
 默认 WebSocket：`ws://127.0.0.1:3847`，由 **daemon 占用**（与 Cursor MCP stdio 进程分离）。  
 首次启用 MCP 时会自动 `spawn` daemon；关闭 Cursor / 重启 MCP **不会立刻**关掉 3847，即时设计插件可继续连着。  
@@ -215,12 +215,12 @@ MCP 绿灯后，再在即时设计里装插件并连上 WebSocket。
 
 | 现象 | 处理 |
 |------|------|
-| MCP 红灯 | 检查 `mcp.json`；确认 `gy_jsdesign_mcp_bridge` 可用，或 npx 能拉到仓库 |
+| MCP 红灯 | 检查 `mcp.json`；确认 `gy_jsdesign_mcp_bridge` 可用，或 npx 能拉到包 |
 | 插件未连接 | 确认 daemon 在 `3847`（`gy_jsdesign_mcp_bridge daemon`）；再点插件「重新连接」；保持面板打开 |
 | 无选中节点 | 先在画布选中目标 Frame |
 | 端口占用（非本 daemon） | 结束占用进程，或设 `JSDESIGN_MCP_PORT` 换端口，并同步改插件面板里的地址 |
 | 旧版 MCP 占着 3847 | 结束旧 `node` 进程后执行 `gy_jsdesign_mcp_bridge daemon` |
-| 命令找不到 | 用 `npx "github:xiaoyaoyaoGitHub/jsdesign-write-mcp#v2.2.0"`，或 `npm i -g "github:xiaoyaoyaoGitHub/jsdesign-write-mcp#v2.2.0"` |
+| 命令找不到 | 用 `npx gy_jsdesign_mcp_bridge`，或 `npm i -g gy_jsdesign_mcp_bridge`；备选 git 方式 `npx "github:xiaoyaoyaoGitHub/jsdesign-write-mcp#v2.2.0"` |
 
 ---
 
